@@ -1,0 +1,29 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Big Test</title>
+</head>
+
+<body>
+    <form action="./login" method="POST">
+        <label>
+            <b>Username:</b>
+            <br>
+            <input type="text" name="user">
+        </label>
+        <br>
+        <label>
+            <b>Password:</b>
+            <br>
+            <input type="password" name="pass">
+        </label>
+        <br>
+        <button type="submit">Login</button>
+    </form>
+    {{#if invalid}}
+    <p style="color:red"> Wrong username or password. </p>
+    {{/if}}
+</body>
+
+</html>

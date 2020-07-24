@@ -1,0 +1,16 @@
+{
+  "name": "blesavi_bot",
+  "version": "0.0.2",
+  "description": "simple bot for handling a web pages requests",
+  "main": "bot.js",
+  "scripts": {
+    "test": "node bot.js"
+  },
+  "author": "Hrvoje Lesar",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/opus": "^0.3.2",
+    "discord.js": "^12.2.0",
+    "opusscript": "0.0.7"
+  }
+}

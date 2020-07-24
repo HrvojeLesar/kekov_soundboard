@@ -1,0 +1,7 @@
+**/sounds
+**/target
+**/download.jpg
+config.json
+board/*.json
+**/node_modules
+volimo*
