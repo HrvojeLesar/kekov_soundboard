@@ -32,7 +32,6 @@ use std::net::{TcpStream, Shutdown};
 use std::sync::RwLock;
 use env_logger;
 
-
 mod dumpster_base;
 use dumpster_base::RwLockedDumpster;
 
@@ -311,7 +310,6 @@ async fn rename(id: Identity, info: web::Form<ChangeDisplayName>, hm: web::Data<
 }
 
 async fn login_get(id: Identity, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
-    id.remember("epik gazda".to_owned());
     if id.identity().is_some() {
         return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/", SCOPE)).finish();
     }
