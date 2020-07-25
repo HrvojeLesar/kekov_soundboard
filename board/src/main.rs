@@ -1,26 +1,27 @@
-#[macro_use]
 extern crate actix_web;
 extern crate actix_files;
 extern crate actix_identity;
+extern crate actix_multipart;
 extern crate actix_rt;
 extern crate futures;
+extern crate mime;
 extern crate time;
+extern crate sanitize_filename;
 
-// #[macro_use]
-// extern crate diesel;
 extern crate rand;
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 extern crate handlebars;
 
-use actix_web::{web, get, http, App, HttpResponse, HttpServer};
+use actix_web::{web, get, http, App, HttpResponse, HttpServer, HttpRequest};
 use actix_web::middleware::errhandlers::{ErrorHandlers, ErrorHandlerResponse};
 use actix_files::Files as ActixFiles;
 use actix_identity::Identity;
 use actix_identity::{CookieIdentityPolicy, IdentityService, RequestIdentity};
+use actix_multipart::Multipart;
 use actix_service::Service;
-use futures::future::{Either, ok};
+use futures::{StreamExt, TryStreamExt};
 use handlebars::{Handlebars, Helper, RenderContext, RenderError, Output, Context};
 use rand::Rng;
 
@@ -38,13 +39,9 @@ use dumpster_base::RwLockedDumpster;
 pub const MAIN_DIR: &str = "../sounds";
 const EMPTY_QUEUE: &str = "Queue is empty!";
 const SCOPE: &str = "/bot";
-
-// #[derive(Debug, Serialize, Deserialize)]
-// struct Path {
-//     value: String,
-//     // unnecessery
-//     path: String,
-// }
+const MAX_FILE_LENGTH: usize = 10_485_760; // 10MB
+const SAVE_SOUNDS: &str = "../sounds/";
+// const MAX_FILE_LENGTH: usize = 800; // test
 
 #[derive(Debug, Serialize, Deserialize)]
 struct PlayRequest {
@@ -71,68 +68,6 @@ struct GarbageLogin {
     user: String,
     pass: String,
 }
-
-// fn load_index() -> serde_json::Value {
-//     let mut path: Vec<Path> = Vec::new();
-    
-//     for file in std::fs::read_dir(MAIN_DIR).unwrap() {
-//         path.push( Path { path: file.unwrap().path().display().to_string(), value: "".to_owned() });
-//     }
-
-//     let data = serde_json::to_string(&path).unwrap();
-
-//     let mut dirs = serde_json::from_str::<Vec<Path>>(&data).unwrap();
-
-//     dirs.iter_mut().for_each(|path| {
-//         path.value = path.path.split(MAIN_DIR_SPLIT).collect::<Vec<&str>>()[1].split(".").collect::<Vec<&str>>()[0].to_owned();
-//     });
-
-//     json!({
-//         "paths": &dirs,
-//     })
-// }
-
-// fn load_index_new(hm: web::Data<HashMap<String, Files>>) -> serde_json::Value {
-//     let mut path: Vec<PathNew> = Vec::new();
-    
-//     hm.keys().for_each(|key| {
-//         path.push( PathNew { value: key.to_string() })
-//     });
-
-//     path.sort_by(|a, b| a.value.cmp(&b.value));
-
-//     let data = json!({
-//         "paths": &path,
-//         "EMPTY_QUEUE": EMPTY_QUEUE,
-//     });
-
-//     // println!("{}", data);
-//     data
-// }
-
-// fn create_file_hash() -> HashMap<String, Files> {
-//     let mut map: HashMap<String, Files> = HashMap::new();
-    
-//     for file in std::fs::read_dir(MAIN_DIR).unwrap() {
-//         let file = file.unwrap();
-//         let file_without_extention = file.file_name().to_str().unwrap().split(".").collect::<Vec<&str>>()[0].to_owned();
-//         // println!("{:?}", file.file_name().to_str().unwrap().split(".").collect::<Vec<&str>>()[0]);
-//         map.insert(
-//             file_without_extention.clone(),
-//             Files {
-//                 full_file_name: String::from(file.file_name().to_str().unwrap()),
-//                 without_extention: file_without_extention,
-//                 directory: file.path().as_path().is_dir(),
-//             }
-//         );
-//         // map.insert(
-//         //     String::from(file.file_name().to_str().unwrap().split(".").collect::<Vec<&str>>()[0]),
-//         //     String::from(file.file_name().to_str().unwrap())
-//         // );
-//     }
-
-//     map
-// }
 
 fn jsonfy_queue(recieved_message: Vec<u8>) -> serde_json::Value {
     let mut queue_vec: Vec<&str> = Vec::new();
@@ -172,15 +107,39 @@ fn dumpster_index(hm: web::Data<RwLockedDumpster>) -> serde_json::Value {
     })
 }
 
+fn update_db(filename: String, hm: web::Data<RwLockedDumpster>) {
+
+    let mut hash_map = hm.dumpster_base_struct.write().unwrap();
+    let file_without_extention = filename.split(".").collect::<Vec<&str>>()[0].to_owned();
+
+    hash_map.insert(
+        filename.clone(),            
+        dumpster_base::DumpsterBaseJson {
+                full_file_name: filename,
+                without_extention: file_without_extention.clone(),
+                display_name: file_without_extention,
+    });
+    // sejvanje je sporo kaj puz
+    dumpster_base::update_dumpster_db(&mut *hash_map).unwrap();
+}
+
 async fn index(id: Identity, hb: web::Data<Handlebars<'_>>, hm: web::Data<RwLockedDumpster>) -> HttpResponse {
     // retarderano, trenutno neznam kak drugac sloziti
     match id.identity() {
         Some(_) => (),
         None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
     }
-// async fn index(hb: web::Data<Handlebars<'_>>, hm: web::Data<HashMap<String, Files>>) -> HttpResponse {
+    // async fn index(hb: web::Data<Handlebars<'_>>, hm: web::Data<HashMap<String, Files>>) -> HttpResponse {
     HttpResponse::Ok().body(hb.render("index", &dumpster_index(hm)).unwrap())
     // HttpResponse::Ok().body(hb.render("index", &load_index_new(hm)).unwrap())
+}
+
+async fn index_redirect(id: Identity) -> HttpResponse {
+    match id.identity() {
+        Some(_) => (),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+    }
+    HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/", SCOPE)).finish()
 }
 
 async fn play_request(id: Identity, info: web::Json<PlayRequest>, hm: web::Data<RwLockedDumpster>) -> HttpResponse {
@@ -352,6 +311,7 @@ async fn rename(id: Identity, info: web::Form<ChangeDisplayName>, hm: web::Data<
 }
 
 async fn login_get(id: Identity, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
+    id.remember("epik gazda".to_owned());
     if id.identity().is_some() {
         return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/", SCOPE)).finish();
     }
@@ -397,14 +357,69 @@ async fn remove(id: Identity, info: web::Form<ChangeDisplayName>, hm: web::Data<
     }
 }
 
+async fn upload_get(id: Identity, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
+    match id.identity() {
+        Some(_) => (),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+    }
+    HttpResponse::Ok().body(hb.render("upload", &()).unwrap())
+}
+
+async fn upload_post(id: Identity, mut payload: Multipart, req: HttpRequest, hm: web::Data<RwLockedDumpster>) -> Result<HttpResponse, actix_web::Error> {
+    match id.identity() {
+        Some(_) => (),
+        None => return Ok(HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish()),
+    }
+
+    if req.headers().get("Content-Length").unwrap().to_str().unwrap().parse::<usize>().unwrap() > MAX_FILE_LENGTH {
+        println!("File size too large");
+        return Err(actix_web::Error::from(HttpResponse::InternalServerError().finish()));
+    }
+
+    let mime = "audio/*".parse::<mime::Mime>().unwrap();
+    let mut file_length = 0;
+    let mut db_filename = String::new();
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        if !mime.type_().eq(&field.content_type().type_()) {
+            return Err(actix_web::Error::from(HttpResponse::InternalServerError().finish()));
+        }
+        let content_type = field.content_disposition().unwrap();
+        let mut filename = sanitize_filename::sanitize(content_type.get_filename().unwrap());
+        let mut filepath = format!("{}{}", SAVE_SOUNDS, filename);
+        while std::path::Path::new(&filepath).exists() {
+            let temp_file_name = filename.clone();
+            let split_extention = temp_file_name.split(".").collect::<Vec<&str>>();
+            filename = format!("{}69.{}", split_extention[0], split_extention[1]);
+            filepath = format!("{}{}69.{}", SAVE_SOUNDS, split_extention[0], split_extention[1]);
+        }
+        let invalid = filepath.clone();
+        db_filename = filename.clone();
+        let mut f = web::block(|| std::fs::File::create(filepath))
+            .await
+            .unwrap();
+        while let Some(chunk) = field.next().await {
+            let data = chunk.unwrap();
+            file_length += data.len();
+            if file_length > MAX_FILE_LENGTH {
+                std::fs::remove_file(invalid).unwrap();
+                return Err(actix_web::Error::from(HttpResponse::InternalServerError().finish()));
+            }
+            f = web::block(move || f.write_all(&data).map(|_| f)).await?;
+        }
+    }
+    update_db(db_filename, hm);
+    Ok(HttpResponse::Ok().into())
+}
+
 async fn volimo_znidarica(hb: web::Data<Handlebars<'_>>) -> HttpResponse {
     HttpResponse::Ok().body(hb.render("volimoZnidarica", &()).unwrap())
 }
 
-
 async fn four_o_four() -> HttpResponse {
     HttpResponse::NotFound().body("<h1>404</h1>")
 }
+
 
 fn counter_helper(
     h: &Helper,
@@ -453,10 +468,11 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
+    // std::fs::create_dir_all("./tmp").unwrap();
+
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
 
     let login_user_pass: web::Data<GarbageLogin> = web::Data::new(serde_json::from_str(&std::fs::read_to_string("login.json").unwrap()).unwrap());
-
     HttpServer::new(move || {
         App::new()
             .wrap(IdentityService::new(
@@ -473,7 +489,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(dumpster_db2_ref.clone())
             .app_data(login_user_pass.clone())
             .service(web::scope(SCOPE)
-	            .service(web::resource("").route(web::get().to(index)))
+	            .service(web::resource("").route(web::get().to(index_redirect)))
 	            .service(web::resource("/").route(web::get().to(index)))
 	            .service(web::resource("/sendReq").route(web::post().to(play_request)))
 	            .service(web::resource("/queue").route(web::get().to(queue)))
@@ -483,10 +499,15 @@ async fn main() -> std::io::Result<()> {
 	            .service(web::resource("/rename").route(web::post().to(rename)))
 	            .service(
 	                web::resource("/login")
-	                .route(web::get().to(login_get))
-	                .route(web::post().to(login_post)))
+                        .route(web::get().to(login_get))
+                        .route(web::post().to(login_post)))
 	            .service(web::resource("/logout").route(web::post().to(logout)))
-	            .service(web::resource("/remove").route(web::post().to(remove)))
+                .service(web::resource("/remove").route(web::post().to(remove)))
+                .service(
+                    web::resource("/upload")
+                        .route(web::get().to(upload_get))
+                        .route(web::post().to(upload_post))
+                )
 	            .service(web::resource("/volimoZnidarica").route(web::get().to(volimo_znidarica)))
 	            .default_service(web::route().to(four_o_four))
 	            .service(ActixFiles::new("/static", "./static/"))
