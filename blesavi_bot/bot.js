@@ -8,11 +8,9 @@ const { time } = require('console');
 
 
 const client = new Discord.Client();
-// const guild = new Discord.Guild(client, "679094912179765271");
 
 const HOST = 'localhost';
 const PORT = 1337;
-// const GUILD_ID = "173766075484340234"; // Vatikan server
 //const GUILD_ID = "679094912179765271"; // T2 server
 
 const MAIN_DIR= "../sounds/";
@@ -144,11 +142,12 @@ function skip(sock) {
 
 function stop(sock) {
     console.log("Stopping");
-    if (queue.length > 1) {
+    if (queue.length >= 1) {
         queue.length = 0;
         dispatcher.end();
         sock.write("6");
     } else {
+		dispatcher.end();
         sock.write("7");
     }
 }
