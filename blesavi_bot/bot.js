@@ -51,7 +51,6 @@ if (!fs.existsSync("./config.json")) {
     }
 }
 
-// client.login('NTY0OTIyMDAzMDE5MDA1OTUy.XwIEsA.wu8rTbP7tz243WqxS3TYIhdiL0o');
 client.login(config.token);
 
 client.on('ready', () => {
