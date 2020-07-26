@@ -37,7 +37,7 @@ use dumpster_base::RwLockedDumpster;
 
 pub const MAIN_DIR: &str = "../sounds";
 const EMPTY_QUEUE: &str = "Queue is empty!";
-const SCOPE: &str = "/bot";
+////const SCOPE: &str = "/bot";
 const MAX_FILE_LENGTH: usize = 10_485_760; // 10MB
 const SAVE_SOUNDS: &str = "../sounds/";
 // const MAX_FILE_LENGTH: usize = 800; // test
@@ -126,7 +126,7 @@ async fn index(id: Identity, hb: web::Data<Handlebars<'_>>, hm: web::Data<RwLock
     // retarderano, trenutno neznam kak drugac sloziti
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
     // async fn index(hb: web::Data<Handlebars<'_>>, hm: web::Data<HashMap<String, Files>>) -> HttpResponse {
     HttpResponse::Ok().body(hb.render("index", &dumpster_index(hm)).unwrap())
@@ -136,16 +136,16 @@ async fn index(id: Identity, hb: web::Data<Handlebars<'_>>, hm: web::Data<RwLock
 async fn index_redirect(id: Identity) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
-    HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/", SCOPE)).finish()
+    HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish()
 }
 
 async fn play_request(id: Identity, info: web::Json<PlayRequest>, hm: web::Data<RwLockedDumpster>) -> HttpResponse {
 // async fn button_test2(info: web::Json<PathNew>, hm: web::Data<HashMap<String, Files>>) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
 
     if !hm.dumpster_base_struct.read().unwrap().contains_key(&info.value) {
@@ -184,7 +184,7 @@ async fn play_request(id: Identity, info: web::Json<PlayRequest>, hm: web::Data<
 async fn queue(id: Identity) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
 
     if let Some(mut tcp_stream) = create_tcp_stream() {
@@ -229,7 +229,7 @@ async fn queue(id: Identity) -> HttpResponse {
 async fn skip(id: Identity) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
 
     if let Some(mut tcp_stream) = create_tcp_stream() {
@@ -263,7 +263,7 @@ async fn skip(id: Identity) -> HttpResponse {
 async fn stop(id: Identity) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
 
     if let Some(mut tcp_stream) = create_tcp_stream() {
@@ -297,21 +297,21 @@ async fn stop(id: Identity) -> HttpResponse {
 async fn rename(id: Identity, info: web::Form<ChangeDisplayName>, hm: web::Data<RwLockedDumpster>) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
     let mut hash_map = hm.dumpster_base_struct.write().unwrap();
 
     hash_map.get_mut(&info.value).unwrap().display_name = info.new_display_name.clone();
     // sejvanje je sporo kaj puz
     match dumpster_base::update_dumpster_db(&mut *hash_map) {
-        Ok(_) => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/edit", SCOPE)).finish(),
+        Ok(_) => return HttpResponse::SeeOther().header(http::header::LOCATION, "/edit").finish(),
         Err(_) => return HttpResponse::BadRequest().finish(),
     }
 }
 
 async fn login_get(id: Identity, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
     if id.identity().is_some() {
-        return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/", SCOPE)).finish();
+        return HttpResponse::SeeOther().header(http::header::LOCATION, "/").finish();
     }
     HttpResponse::Ok().body(hb.render("login", &()).unwrap())
 }
@@ -319,20 +319,20 @@ async fn login_get(id: Identity, hb: web::Data<Handlebars<'_>>) -> HttpResponse 
 async fn login_post(id: Identity, form: web::Form<GarbageLogin>, pass: web::Data<GarbageLogin>, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
     if (form.user == pass.user && form.pass == pass.pass) || id.identity().is_some() {
         id.remember("epik gazda".to_owned());
-        return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/", SCOPE)).finish();
+        return HttpResponse::SeeOther().header(http::header::LOCATION, "/").finish();
     }
     HttpResponse::Ok().body(hb.render("login", &json!({"invalid": true})).unwrap())
 }
 
 async fn logout(id: Identity) -> HttpResponse {
     id.forget();
-    return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish();
+    HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish()
 }
 
 async fn edit(id: Identity, hb: web::Data<Handlebars<'_>>, hm: web::Data<RwLockedDumpster>) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
     HttpResponse::Ok().body(hb.render("edit", &dumpster_index(hm)).unwrap())
 }
@@ -340,7 +340,7 @@ async fn edit(id: Identity, hb: web::Data<Handlebars<'_>>, hm: web::Data<RwLocke
 async fn remove(id: Identity, info: web::Form<ChangeDisplayName>, hm: web::Data<RwLockedDumpster>) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
     let mut hash_map = hm.dumpster_base_struct.write().unwrap();
 
@@ -350,7 +350,7 @@ async fn remove(id: Identity, info: web::Form<ChangeDisplayName>, hm: web::Data<
     }
     // sejvanje je sporo kaj puz
     match dumpster_base::update_dumpster_db(&mut *hash_map) {
-        Ok(_) => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/edit", SCOPE)).finish(),
+        Ok(_) => return HttpResponse::SeeOther().header(http::header::LOCATION, "/edit").finish(),
         Err(_) => return HttpResponse::BadRequest().finish(),
     }
 }
@@ -358,7 +358,7 @@ async fn remove(id: Identity, info: web::Form<ChangeDisplayName>, hm: web::Data<
 async fn upload_get(id: Identity, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
     match id.identity() {
         Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish(),
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
     }
     HttpResponse::Ok().body(hb.render("upload", &()).unwrap())
 }
@@ -366,7 +366,7 @@ async fn upload_get(id: Identity, hb: web::Data<Handlebars<'_>>) -> HttpResponse
 async fn upload_post(id: Identity, mut payload: Multipart, req: HttpRequest, hm: web::Data<RwLockedDumpster>) -> Result<HttpResponse, actix_web::Error> {
     match id.identity() {
         Some(_) => (),
-        None => return Ok(HttpResponse::SeeOther().header(http::header::LOCATION, format!("{}/login", SCOPE)).finish()),
+        None => return Ok(HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish()),
     }
 
     if req.headers().get("Content-Length").unwrap().to_str().unwrap().parse::<usize>().unwrap() > MAX_FILE_LENGTH {
@@ -486,30 +486,31 @@ async fn main() -> std::io::Result<()> {
             // .app_data(file_hash_ref.clone())
             .app_data(dumpster_db2_ref.clone())
             .app_data(login_user_pass.clone())
-            .service(web::scope(SCOPE)
-	            .service(web::resource("").route(web::get().to(index_redirect)))
-	            .service(web::resource("/").route(web::get().to(index)))
-	            .service(web::resource("/sendReq").route(web::post().to(play_request)))
-	            .service(web::resource("/queue").route(web::get().to(queue)))
-	            .service(web::resource("/skip").route(web::get().to(skip)))
-	            .service(web::resource("/stop").route(web::get().to(stop)))
-	            .service(web::resource("/edit").route(web::get().to(edit)))
-	            .service(web::resource("/rename").route(web::post().to(rename)))
-	            .service(
-	                web::resource("/login")
-                        .route(web::get().to(login_get))
-                        .route(web::post().to(login_post)))
-	            .service(web::resource("/logout").route(web::post().to(logout)))
-                .service(web::resource("/remove").route(web::post().to(remove)))
-                .service(
-                    web::resource("/upload")
-                        .route(web::get().to(upload_get))
-                        .route(web::post().to(upload_post))
-                )
-	            .service(web::resource("/volimoZnidarica").route(web::get().to(volimo_znidarica)))
-	            .default_service(web::route().to(four_o_four))
-	            .service(ActixFiles::new("/static", "./static/"))
-            )
+//            .service(web::scope(SCOPE)
+            .service(web::resource("").route(web::get().to(index_redirect)))
+            .service(web::resource("/").route(web::get().to(index)))
+            .service(web::resource("/sendReq").route(web::post().to(play_request)))
+            .service(web::resource("/queue").route(web::get().to(queue)))
+            .service(web::resource("/skip").route(web::get().to(skip)))
+            .service(web::resource("/stop").route(web::get().to(stop)))
+            .service(web::resource("/edit").route(web::get().to(edit)))
+            .service(web::resource("/rename").route(web::post().to(rename)))
+            .service(
+                web::resource("/login")
+                .route(web::get().to(login_get))
+                .route(web::post().to(login_post))
+   	    )
+            .service(web::resource("/logout").route(web::post().to(logout)))
+	    .service(web::resource("/remove").route(web::post().to(remove)))
+	    .service(
+		web::resource("/upload")
+                .route(web::get().to(upload_get))
+                .route(web::post().to(upload_post))
+	    )
+            .service(web::resource("/volimoZnidarica").route(web::get().to(volimo_znidarica)))
+            .default_service(web::route().to(four_o_four))
+            .service(ActixFiles::new("/static", "./static/"))
+//            )
     })
     .bind("localhost:6969")?
     .run()
