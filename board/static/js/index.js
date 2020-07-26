@@ -25,10 +25,6 @@ $(function () {
         let val = {
             "value": $(this).attr('file_name'),
         };
-        // let val = {
-        //     "value": $(this).val(),
-        //     // "path": $(this).data("path")
-        // };
         console.log(JSON.stringify(val));
         $.post("./sendReq", JSON.stringify(val), function (response) {
             alert("Mnogo dobro");

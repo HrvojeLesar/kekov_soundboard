@@ -68,6 +68,12 @@ struct GarbageLogin {
     pass: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct LoginZnidaric {
+    user: String,
+    pass: String,
+}
+
 fn jsonfy_queue(recieved_message: Vec<u8>) -> serde_json::Value {
     let mut queue_vec: Vec<&str> = Vec::new();
     let parsed_bytes = String::from_utf8(recieved_message).unwrap();
@@ -414,6 +420,67 @@ async fn volimo_znidarica(hb: web::Data<Handlebars<'_>>) -> HttpResponse {
     HttpResponse::Ok().body(hb.render("volimoZnidarica", &()).unwrap())
 }
 
+async fn login_znidaric_get(hb: web::Data<Handlebars<'_>>) -> HttpResponse {
+    HttpResponse::Ok().body(hb.render("loginZnidaric", &()).unwrap())
+}
+
+async fn login_znidaric_post(form: web::Form<LoginZnidaric>, pass: web::Data<LoginZnidaric>, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
+    if form.user == pass.user && form.pass == pass.pass {
+        return HttpResponse::SeeOther().header(http::header::LOCATION, "/banajMatijosa").finish();
+    }
+    HttpResponse::Ok().body(hb.render("loginZnidaric", &json!({"invalid": true})).unwrap())
+}
+
+async fn banaj_matijosa_get(hb: web::Data<Handlebars<'_>>, req: HttpRequest) -> HttpResponse {
+    match req.headers().get("referer") {
+        Some(r) => {
+            if r.to_str().unwrap().contains("loginZnidaric") {
+                return HttpResponse::Ok().body(hb.render("banajMatijosa", &()).unwrap());
+            } else {
+                return HttpResponse::SeeOther().header(http::header::LOCATION, "/loginZnidaric").finish();
+            }
+        },
+        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/loginZnidaric").finish(),
+    }
+}
+
+async fn banaj_matijosa_post(req: HttpRequest) -> HttpResponse {
+    match req.headers().get("referer") {
+        Some(r) => {
+            if r.to_str().unwrap().contains("banajMatijosa") {
+                if let Some(mut tcp_stream) = create_tcp_stream() {
+                    let data = json!({
+                        "command": "banaj",
+                    });
+                    
+                    tcp_stream.write(&data.to_string().as_bytes()).expect("Err");
+                    tcp_stream.flush().unwrap();
+                    
+                    let mut buffer = [0; 8];
+                    println!("Number of recieved bytes: {}", tcp_stream.read(&mut buffer).unwrap());
+                    
+                    println!("{}", buffer[0]);
+        
+                    tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
+        
+                    if buffer[0] == 56 { // 8
+                        return HttpResponse::Ok().json(json!({ "success": "Ok" }));
+                    } else if buffer[0] == 57 { // 9
+                        return HttpResponse::Ok().json(json!({ "success": "Mortik je vec banati" }));
+                    } else {
+                        return HttpResponse::BadRequest().finish();
+                    }
+                } else {
+                    return HttpResponse::BadRequest().finish()
+                }
+            } else {
+                return HttpResponse::BadRequest().finish();
+            }
+        },
+        None => return HttpResponse::BadRequest().finish(),
+    }
+}
+
 async fn four_o_four() -> HttpResponse {
     HttpResponse::NotFound().body("<h1>404</h1>")
 }
@@ -471,6 +538,7 @@ async fn main() -> std::io::Result<()> {
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
 
     let login_user_pass: web::Data<GarbageLogin> = web::Data::new(serde_json::from_str(&std::fs::read_to_string("login.json").unwrap()).unwrap());
+    let login_znidaric: web::Data<LoginZnidaric> = web::Data::new(serde_json::from_str(&std::fs::read_to_string("loginZnidaric.json").unwrap()).unwrap());
     HttpServer::new(move || {
         App::new()
             .wrap(IdentityService::new(
@@ -478,7 +546,7 @@ async fn main() -> std::io::Result<()> {
                     .name("pojecme")
                     .login_deadline(time::Duration::hours(24))
                     .max_age(86400)
-                    .secure(true),
+                    .secure(false),
             ))
             .wrap(actix_web::middleware::Logger::default())
             .data(web::JsonConfig::default().limit(1024))
@@ -486,6 +554,7 @@ async fn main() -> std::io::Result<()> {
             // .app_data(file_hash_ref.clone())
             .app_data(dumpster_db2_ref.clone())
             .app_data(login_user_pass.clone())
+            .app_data(login_znidaric.clone())
 //            .service(web::scope(SCOPE)
             .service(web::resource("").route(web::get().to(index_redirect)))
             .service(web::resource("/").route(web::get().to(index)))
@@ -499,15 +568,25 @@ async fn main() -> std::io::Result<()> {
                 web::resource("/login")
                 .route(web::get().to(login_get))
                 .route(web::post().to(login_post))
-   	    )
+   	        )
             .service(web::resource("/logout").route(web::post().to(logout)))
-	    .service(web::resource("/remove").route(web::post().to(remove)))
-	    .service(
-		web::resource("/upload")
+	        .service(web::resource("/remove").route(web::post().to(remove)))
+	        .service(
+		        web::resource("/upload")
                 .route(web::get().to(upload_get))
                 .route(web::post().to(upload_post))
-	    )
+	        )
             .service(web::resource("/volimoZnidarica").route(web::get().to(volimo_znidarica)))
+            .service(
+                web::resource("/loginZnidaric")
+                .route(web::get().to(login_znidaric_get))
+                .route(web::post().to(login_znidaric_post))
+            )
+            .service(
+                web::resource("/banajMatijosa")
+                .route(web::get().to(banaj_matijosa_get))
+                .route(web::post().to(banaj_matijosa_post))
+            )
             .default_service(web::route().to(four_o_four))
             .service(ActixFiles::new("/static", "./static/"))
 //            )

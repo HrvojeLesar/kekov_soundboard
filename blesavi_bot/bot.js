@@ -29,6 +29,8 @@ let timeout;
 // 5 => Queue is empty
 // 6 => Stop
 // 7 => Nothing to stop
+// 8 => Matijos je banati
+// 9 => Nembrem ga banati
 
 // flow
 // sharding ?
@@ -80,6 +82,10 @@ net.createServer((sock) => {
             }
             case 'stop': {
                 stop(sock);
+                break;
+            }
+            case 'banaj': {
+                banajMatijosa(sock);
                 break;
             }
             default: {
@@ -140,6 +146,11 @@ function skip(sock) {
 }
 
 function stop(sock) {
+    if (dispatcher == null) {
+        console.log("Dispatcher not initialized");
+        return 0;
+    }
+
     console.log("Stopping");
     if (queue.length >= 1) {
         queue.length = 0;
@@ -208,4 +219,16 @@ function disconnect_bot(connection) {
         dispatcher.destroy();
         connection.disconnect();
     }, 3000);
+}
+
+function banajMatijosa(sock) {
+    client.guilds.cache.get(config.guild_id).members.ban("252114544485335051")
+        .then(user => {
+            console.log("Banned ${user.username || user.id || user}");
+            sock.write("8");
+        })
+        .catch((error) => {
+            console.log(error);
+            sock.write("9");
+        });
 }
