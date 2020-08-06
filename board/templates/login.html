@@ -3,27 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <title>Lol dober dizajn</title>
+    <link rel="stylesheet" href="./static/css/login.css">
 </head>
 
 <body>
-    <form action="./login" method="POST">
-        <label>
-            <b>Username:</b>
+    <div id="login-form">
+        <form action="./login" method="POST">
+            <label>
+                <b>Username:</b>
+                <br>
+                <input type="text" name="user">
+            </label>
             <br>
-            <input type="text" name="user">
-        </label>
-        <br>
-        <label>
-            <b>Password:</b>
+            <label>
+                <b>Password:</b>
+                <br>
+                <input type="password" name="pass">
+            </label>
             <br>
-            <input type="password" name="pass">
-        </label>
-        <br>
-        <button type="submit">Login</button>
-    </form>
+            <button type="submit">Login</button>
+        </form>
     {{#if invalid}}
     <p style="color:red"> Wrong username or password. </p>
     {{/if}}
+    </div>
 </body>
 
 </html>

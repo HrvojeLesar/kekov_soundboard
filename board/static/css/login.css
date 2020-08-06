@@ -1,0 +1,35 @@
+#login-form {
+    background-color: #eeeeee;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* margin-right: -50%; */
+    padding: 60px;
+    transform: translate(-50%, -50%);
+    border-radius: 10px;
+    border-style: solid;
+    border-color: black;
+}
+
+input {
+    padding: 8px;
+    margin: 10px;
+    border-style: solid;
+    border-radius: 3px;
+}
+
+
+label {
+    margin: 10px;
+}
+
+button {
+    padding: 10px 24px;
+    margin: 10px;
+    border-radius: 3px;
+    background-color: white;
+}
+
+p {
+    margin: 10px;
+}

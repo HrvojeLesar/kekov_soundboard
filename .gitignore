@@ -6,3 +6,4 @@ board/*.json
 **/node_modules
 volimo*
 debug_config.json
+**/TODO*
