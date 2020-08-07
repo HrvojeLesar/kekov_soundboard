@@ -1,0 +1,50 @@
+.grid-container {
+    padding: 30px;
+    display: grid;
+    grid-template-columns: auto auto auto auto;
+    border-radius: 10px;
+    border-style: solid;
+    border-color: black;
+    background-color: #eeeeee;
+    margin: 10px;
+}
+
+.grid-item {
+    background-color:#b5e2fc;
+    border: 1px solid;
+    padding: 20px;
+    margin: 5px;
+    text-align: center;
+    position: relative;
+}
+
+.grid-item:hover {
+    transition-duration: 0.2s;
+    background-color:#dcedf7;
+}
+
+.grid-item:hover .item-remove {
+    visibility: visible;
+}
+
+.item-remove {
+    padding: 6px;
+    background-color: red;
+    visibility: hidden;
+    position: absolute;
+    top: 0.5px;
+    right: 0.5px;
+}
+
+.item-remove:hover {
+    transition-duration: 0.2s;
+    background-color: aqua;
+}
+
+.item-remove:hover .grid-item:hover {
+    pointer-events: none;
+}
+
+.fa-trash-o {
+    color: white;
+}

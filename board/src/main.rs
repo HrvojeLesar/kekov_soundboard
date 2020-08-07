@@ -35,6 +35,7 @@ pub mod prelude;
 
 const MAIN_DIR: &str = "../sounds";
 
+/// Creates a tcp stream for comunnication with the discord bot
 pub fn create_tcp_stream() -> Option<TcpStream> {
     let tcp_stream = match TcpStream::connect("localhost:1337") {
         Ok(stream) => Some(stream),
@@ -46,6 +47,7 @@ pub fn create_tcp_stream() -> Option<TcpStream> {
     tcp_stream
 }
 
+/// Displays 404 for any invalid url
 async fn four_o_four() -> HttpResponse {
     HttpResponse::NotFound().body("<h1>404</h1>")
 }
