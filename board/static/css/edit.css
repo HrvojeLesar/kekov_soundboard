@@ -29,7 +29,7 @@
 
 .item-remove {
     padding: 6px;
-    background-color: red;
+    background-color: #ff0400;
     visibility: hidden;
     position: absolute;
     top: 0.5px;
@@ -38,7 +38,7 @@
 
 .item-remove:hover {
     transition-duration: 0.2s;
-    background-color: aqua;
+    background-color: #d10502;
 }
 
 .item-remove:hover .grid-item:hover {
