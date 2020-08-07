@@ -20,7 +20,7 @@ $(function () {
             console.log("Failed: " + fail);
         });
     });
-    $(".board").click(function (e) {
+    $(".grid-item").click(function (e) {
         e.preventDefault();
         let val = {
             "value": $(this).attr('file_name'),
