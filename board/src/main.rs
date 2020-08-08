@@ -32,6 +32,7 @@ pub mod login;
 pub mod upload;
 pub mod nekaj_za_znidarica;
 pub mod prelude;
+pub mod logged_guard;
 
 const MAIN_DIR: &str = "../sounds";
 
@@ -95,7 +96,7 @@ async fn main() -> std::io::Result<()> {
                     .name("pojecme")
                     .login_deadline(time::Duration::hours(24))
                     .max_age(86400)
-                    .secure(true),
+                    .secure(false),
             ))
             .wrap(actix_web::middleware::Logger::default())
             .data(web::JsonConfig::default().limit(1024))
@@ -103,15 +104,15 @@ async fn main() -> std::io::Result<()> {
             .app_data(dumpster_db2_ref.clone())
             .app_data(login_user_pass.clone())
             .app_data(login_znidaric.clone())
-            .service(web::resource("").route(web::get().to(index::index)))
-            .service(web::resource("/").route(web::get().to(index::index)))
-            .service(web::resource("/sendReq").route(web::post().to(controls::play_request)))
-            .service(web::resource("/queue").route(web::get().to(controls::queue)))
-            .service(web::resource("/skip").route(web::get().to(controls::skip)))
-            .service(web::resource("/stop").route(web::get().to(controls::stop)))
-            .service(web::resource("/edit").route(web::get().to(controls::edit)))
-            .service(web::resource("/rename").route(web::post().to(controls::rename)))
-            .service(web::resource("/remove").route(web::post().to(controls::remove)))
+            .service(web::resource("").route(web::get().to(index::index)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/").route(web::get().to(index::index)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/sendReq").route(web::post().to(controls::play_request)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/queue").route(web::get().to(controls::queue)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/skip").route(web::get().to(controls::skip)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/stop").route(web::get().to(controls::stop)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/edit").route(web::get().to(controls::edit)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/rename").route(web::post().to(controls::rename)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/remove").route(web::post().to(controls::remove)).wrap(logged_guard::LoggedGuard))
             .service(
                 web::resource("/login")
                 .route(web::get().to(login::login_get))
@@ -119,7 +120,7 @@ async fn main() -> std::io::Result<()> {
    	        )
             .service(web::resource("/logout").route(web::post().to(login::logout)))
 	        .service(
-		        web::resource("/upload")
+		        web::resource("/upload").wrap(logged_guard::LoggedGuard)
                 .route(web::get().to(upload::upload_get))
                 .route(web::post().to(upload::upload_post))
 	        )

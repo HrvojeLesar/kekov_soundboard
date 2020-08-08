@@ -15,10 +15,5 @@ pub fn dumpster_index(hm: web::Data<dumpster_base::RwLockedDumpster>) -> serde_j
 }
 
 pub async fn index(id: Identity, hb: web::Data<Handlebars<'_>>, hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpResponse {
-    // retarderano, trenutno neznam kak drugac sloziti
-    match id.identity() {
-        Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
-    }
     HttpResponse::Ok().body(hb.render("index", &dumpster_index(hm)).unwrap())
 }

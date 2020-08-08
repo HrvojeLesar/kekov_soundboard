@@ -27,20 +27,10 @@ fn jsonfy_queue(recieved_message: Vec<u8>) -> serde_json::Value {
 }
 
 pub async fn play_request(
-    id: Identity,
     info: web::Json<PlayRequest>,
     hm: web::Data<dumpster_base::RwLockedDumpster>,
 ) -> HttpResponse {
     // async fn button_test2(info: web::Json<PathNew>, hm: web::Data<HashMap<String, Files>>) -> HttpResponse {
-    match id.identity() {
-        Some(_) => (),
-        None => {
-            return HttpResponse::SeeOther()
-                .header(http::header::LOCATION, "/login")
-                .finish()
-        }
-    }
-
     if !hm
         .dumpster_base_struct
         .read()
@@ -76,15 +66,7 @@ pub async fn play_request(
         return HttpResponse::BadRequest().finish();
     }
 }
-pub async fn queue(id: Identity) -> HttpResponse {
-    match id.identity() {
-        Some(_) => (),
-        None => {
-            return HttpResponse::SeeOther()
-                .header(http::header::LOCATION, "/login")
-                .finish()
-        }
-    }
+pub async fn queue() -> HttpResponse {
 
     if let Some(mut tcp_stream) = create_tcp_stream() {
         let data = json!({
@@ -126,15 +108,7 @@ pub async fn queue(id: Identity) -> HttpResponse {
     }
 }
 
-pub async fn skip(id: Identity) -> HttpResponse {
-    match id.identity() {
-        Some(_) => (),
-        None => {
-            return HttpResponse::SeeOther()
-                .header(http::header::LOCATION, "/login")
-                .finish()
-        }
-    }
+pub async fn skip() -> HttpResponse {
 
     if let Some(mut tcp_stream) = create_tcp_stream() {
         let data = json!({
@@ -159,15 +133,7 @@ pub async fn skip(id: Identity) -> HttpResponse {
         return HttpResponse::BadRequest().finish();
     }
 }
-pub async fn stop(id: Identity) -> HttpResponse {
-    match id.identity() {
-        Some(_) => (),
-        None => {
-            return HttpResponse::SeeOther()
-                .header(http::header::LOCATION, "/login")
-                .finish()
-        }
-    }
+pub async fn stop() -> HttpResponse {
 
     if let Some(mut tcp_stream) = create_tcp_stream() {
         let data = json!({
@@ -194,18 +160,9 @@ pub async fn stop(id: Identity) -> HttpResponse {
 }
 
 pub async fn rename(
-    id: Identity,
     info: web::Form<ChangeDisplayName>,
     hm: web::Data<dumpster_base::RwLockedDumpster>,
 ) -> HttpResponse {
-    match id.identity() {
-        Some(_) => (),
-        None => {
-            return HttpResponse::SeeOther()
-                .header(http::header::LOCATION, "/login")
-                .finish()
-        }
-    }
     let mut hash_map = hm.dumpster_base_struct.write().unwrap();
 
     hash_map.get_mut(&info.value).unwrap().display_name = info.new_display_name.clone();
@@ -221,34 +178,16 @@ pub async fn rename(
 }
 
 pub async fn edit(
-    id: Identity,
     hb: web::Data<Handlebars<'_>>,
     hm: web::Data<dumpster_base::RwLockedDumpster>,
 ) -> HttpResponse {
-    match id.identity() {
-        Some(_) => (),
-        None => {
-            return HttpResponse::SeeOther()
-                .header(http::header::LOCATION, "/login")
-                .finish()
-        }
-    }
     HttpResponse::Ok().body(hb.render("edit", &index::dumpster_index(hm)).unwrap())
 }
 
 pub async fn remove(
-    id: Identity,
     info: web::Form<ChangeDisplayName>,
     hm: web::Data<dumpster_base::RwLockedDumpster>,
 ) -> HttpResponse {
-    match id.identity() {
-        Some(_) => (),
-        None => {
-            return HttpResponse::SeeOther()
-                .header(http::header::LOCATION, "/login")
-                .finish()
-        }
-    }
     let mut hash_map = hm.dumpster_base_struct.write().unwrap();
 
     match hash_map.remove_entry(&info.value) {

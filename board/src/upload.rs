@@ -20,20 +20,11 @@ fn update_db(filename: String, hm: web::Data<dumpster_base::RwLockedDumpster>) {
 }
 
 
-pub async fn upload_get(id: Identity, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
-    match id.identity() {
-        Some(_) => (),
-        None => return HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish(),
-    }
+pub async fn upload_get(hb: web::Data<Handlebars<'_>>) -> HttpResponse {
     HttpResponse::Ok().body(hb.render("upload", &()).unwrap())
 }
 
-pub async fn upload_post(id: Identity, mut payload: Multipart, req: HttpRequest, hm: web::Data<dumpster_base::RwLockedDumpster>) -> Result<HttpResponse, actix_web::Error> {
-    match id.identity() {
-        Some(_) => (),
-        None => return Ok(HttpResponse::SeeOther().header(http::header::LOCATION, "/login").finish()),
-    }
-
+pub async fn upload_post(mut payload: Multipart, req: HttpRequest, hm: web::Data<dumpster_base::RwLockedDumpster>) -> Result<HttpResponse, actix_web::Error> {
     if req.headers().get("Content-Length").unwrap().to_str().unwrap().parse::<usize>().unwrap() > MAX_FILE_LENGTH {
         println!("File size too large");
         return Err(actix_web::Error::from(HttpResponse::InternalServerError().finish()));
