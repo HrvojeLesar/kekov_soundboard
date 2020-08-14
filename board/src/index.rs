@@ -14,6 +14,6 @@ pub fn dumpster_index(hm: web::Data<dumpster_base::RwLockedDumpster>) -> serde_j
     })
 }
 
-pub async fn index(id: Identity, hb: web::Data<Handlebars<'_>>, hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpResponse {
+pub async fn index(hb: web::Data<Handlebars<'_>>, hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpResponse {
     HttpResponse::Ok().body(hb.render("index", &dumpster_index(hm)).unwrap())
 }
