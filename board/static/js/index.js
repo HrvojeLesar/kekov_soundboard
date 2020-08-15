@@ -1,86 +1,141 @@
 const EMPTY_QUEUE = "Queue is empty!";
-let toast_num = 0;
+let queue_toast_num = 0;
+let play_toast_num = 0;
 $(function () {
     $.ajaxSetup({
         contentType: 'application/json',
         dataType: 'html'
     });
-    $(".rename").click(function(e) {
-        console.log("rename clicked");
-        let dat = JSON.stringify({
-            "value": "ooh.m4a",
-            "new_display_name": "ooh"
-        });
 
-        $.post("./rename", dat, () => {}, 'html')
-        .done(function(response) {
-            location.reload();
-        })
-        .fail(function(fail) {
-            console.log("Failed: " + fail);
-        });
-    });
-    $(".grid-item").click(function (e) {
+    // play clicked item
+    $(".playable-item").click(function (e) {
         e.preventDefault();
         let val = {
             "value": $(this).attr('file_name'),
         };
         console.log(JSON.stringify(val));
         $.post("./sendReq", JSON.stringify(val), function (response) {
-            alert("Mnogo dobro");
             console.log("Preslo je");
+            generate_play_toast(response);
         }, 'json')
-            .fail(function (x) {
-                console.log("Neje preslo");
+            .fail(function (err) {
+                console.log(err);
+                generate_play_toast("err");
             });
     });
 
+    // display queue
     $(".queue").click(function (e) {
         e.preventDefault();
         $.get("./queue", "", function (response) {
             // alert("Get Queue");
             console.log("Preslo je");
             console.log(response);
-            generate_toast(response, response.success);
+            generate_queue_toast(response, response.success);
         }, 'json')
             .fail(function (x) {
                 console.log("Neje preslo");
-                generate_toast("err", "queue_fail");
+                generate_queue_toast("err", "queue_fail");
             });
     });
 
+    // skip currently playing
     $(".skip").click(function (e) {
         e.preventDefault();
         $.get("./skip", "", function (response) {
             // alert("Get Queue");
             console.log("Preslo je");
             console.log(response);
-            generate_toast(response, response.success);
+            generate_queue_toast(response, response.success);
         }, 'json')
             .fail(function (x) {
                 console.log("Neje preslo");
-                generate_toast("err", "skip_fail");
+                generate_queue_toast("err", "skip_fail");
             });
     });
 
+    // stop playing
     $(".stop").click(function (e) {
         e.preventDefault();
         $.get("./stop", "", function (response) {
-            // alert("Get Queue");
             console.log("Preslo je");
             console.log(response);
-            generate_toast(response, response.success);
+            generate_queue_toast(response, response.success);
         }, 'json')
             .fail(function (x) {
                 console.log("Neje preslo");
-                generate_toast("err", "stop_fail");
+                generate_queue_toast("err", "stop_fail");
             });
     });
 
+
+    function generate_play_toast(response) {
+        let toast_class_selector = '.toast-' + play_toast_num;
+        let toast_class = 'toast toast-' + play_toast_num;
+        let toast = `<div class='` + toast_class + `'`;
+        toast += `role='alert' data-delay='1000' aria-live='assertive' aria-atomic='true'>`;
+        if (response === "err") {
+            toast += `
+                <div class='toast-header' style='background: #f94825; color: white;'>
+                    <strong class='mr-auto'>Error</strong>
+                    <button type='button' class='ml-2 mb-1 close' data-dismiss='toast' aria-label='Close'>
+                    <span aria-hidden='true'>&times;</span>
+                    </button>
+                </div>`;
+            toast += `<div class='toast-body'>Error connecting to bot!</div>`;
+        } else if (response.error === undefined) {
+            toast += `
+                <div class='toast-header' style='background: #75fc53; color: white;'>
+                    <strong class='mr-auto'>S U C C</strong>
+                    <button type='button' class='ml-2 mb-1 close' data-dismiss='toast' aria-label='Close'>
+                    <span aria-hidden='true'>&times;</span>
+                    </button>
+                </div>`;
+                    
+            switch(response.success) {
+                case "playing": {
+                    toast += "<div class='toast-body'>Playing</div>";
+                    break;
+                }
+                case "added": {
+                    toast += "<div class='toast-body'>Added to queue</div>";
+                    break;
+                }
+            }
+        } else {
+            toast += `
+                <div class='toast-header' style='background: #f94825; color: white;'>
+                    <strong class='mr-auto'>Error</strong>
+                    <button type='button' class='ml-2 mb-1 close' data-dismiss='toast' aria-label='Close'>
+                    <span aria-hidden='true'>&times;</span>
+                    </button>
+                </div>`;
+
+            switch(response.error) {
+                case "error joining": {
+                    toast += "<div class='toast-body'>All voice channels are empty</div>";
+                    break;
+                }
+                case "unknown error": {
+                    toast += "<div class='toast-body'>Unknown error! Prekini mi trti bota!</div>";
+                    break;
+                }
+            }
+        }
+        toast += `</div>`;
+        $('.deni_tosta').append(toast);
+        // registreraj listenera kaj ubi toasta z DOM-a
+        $(toast_class_selector).on('hidden.bs.toast', function () {
+            $(this).remove();
+        });
+        $(toast_class_selector).toast('show');
+        play_toast_num++;
+    }
+
     // volim biti retarderani
-    function generate_toast(response, action) {
-        let toast_class_selector = '.toast-' + toast_num;
-        let toast_class = 'toast toast-' + toast_num;
+    function generate_queue_toast(response, action) {
+        let toast_class_selector = '.toast-' + queue_toast_num;
+        let toast_class = 'toast toast-' + queue_toast_num;
         let toast = `<div class='` + toast_class + `'`;
         toast += `role='alert' data-delay='1000' aria-live='assertive' aria-atomic='true'>
             <div class='toast-header'>
@@ -140,6 +195,6 @@ $(function () {
             $(this).remove();
         });
         $(toast_class_selector).toast('show');
-        toast_num++;
+        queue_toast_num++;
     }
 });

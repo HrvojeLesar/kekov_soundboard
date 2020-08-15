@@ -20,9 +20,12 @@ use actix_identity::{CookieIdentityPolicy, IdentityService};
 use handlebars::{Handlebars, Helper, RenderContext, RenderError, Output, Context};
 use rand::Rng;
 
+use std::time::Duration;
 use std::net::{TcpStream};
 use std::sync::RwLock;
 use env_logger;
+
+use crate::prelude::*;
 
 pub mod dumpster_base;
 pub use dumpster_base::RwLockedDumpster;
@@ -36,10 +39,14 @@ pub mod logged_guard;
 
 const MAIN_DIR: &str = "../sounds";
 
-/// Creates a tcp stream for comunnication with the discord bot
+/// Creates a tcp stream for communication with the discord bot
 pub fn create_tcp_stream() -> Option<TcpStream> {
     let tcp_stream = match TcpStream::connect("localhost:1337") {
-        Ok(stream) => Some(stream),
+        Ok(stream) => {
+            stream.set_read_timeout(Some(Duration::new(5, 0))).expect("Error setting read timeout!");
+            stream.set_write_timeout(Some(Duration::new(5, 0))).expect("Error setting write timeout!");
+            Some(stream)
+        },
         Err(e) => {
             println!("{}", e);
             None

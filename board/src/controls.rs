@@ -11,6 +11,11 @@ pub struct ChangeDisplayName {
     new_display_name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Queue {
+    queue: Vec<String>,
+}
+
 const EMPTY_QUEUE: &str = "Queue is empty!";
 
 fn jsonfy_queue(recieved_message: Vec<u8>) -> serde_json::Value {
@@ -30,7 +35,6 @@ pub async fn play_request(
     info: web::Json<PlayRequest>,
     hm: web::Data<dumpster_base::RwLockedDumpster>,
 ) -> HttpResponse {
-    // async fn button_test2(info: web::Json<PathNew>, hm: web::Data<HashMap<String, Files>>) -> HttpResponse {
     if !hm
         .dumpster_base_struct
         .read()
@@ -41,11 +45,6 @@ pub async fn play_request(
     }
 
     if let Some(mut tcp_stream) = create_tcp_stream() {
-        // let data = json!({
-        //     "command": "play",
-        //     "value": &info.value,
-        //     "file_name": &hm.get(&info.value).unwrap(),
-        // });
         let data = json!({
             "command": "play",
             "value": &info.value,
@@ -58,16 +57,28 @@ pub async fn play_request(
             "Number of recieved bytes: {}",
             tcp_stream.read(&mut buffer).unwrap()
         );
-        let message = String::from_utf8(buffer.to_vec()).unwrap();
-        println!("{}", message);
+        // 0 | 48 => Started playing (queue was empty before starting)
+        // 1 | 49 => Added to queue
+        // 2 | 50 => RETARDERANI SAM
+        // 3 | 51 => Error joining channel. At least one person needs to be joined in a voice channel!
+        println!("{}", buffer[0]);
+        let response;
+        match buffer[0] {
+            48 => response = json!({ "success": "playing" }),
+            49 => response = json!({ "success": "added" }),
+            51 => response = json!({ "error": "error joining" }),
+            _ => response = json!({ "error": "unknown error" }),
+        };
         tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
-        HttpResponse::Ok().json(json!({ "success": "Ok" }))
+        HttpResponse::Ok().json(response)
     } else {
         return HttpResponse::BadRequest().finish();
     }
 }
-pub async fn queue() -> HttpResponse {
 
+/// Gets queue from bot
+/// Uses 2 tcp reads, byte length of queue, queue
+pub async fn queue(hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpResponse {
     if let Some(mut tcp_stream) = create_tcp_stream() {
         let data = json!({
             "command": "queue"
@@ -76,7 +87,12 @@ pub async fn queue() -> HttpResponse {
         tcp_stream.write(&data.to_string().as_bytes()).expect("Err");
         tcp_stream.flush().unwrap();
         let mut message_length = [0; 8];
-        tcp_stream.read(&mut message_length).unwrap();
+        // get queue byte length
+        println!(
+            "Number of recieved bytes 1: {}",
+            // get queue elements
+            tcp_stream.read(&mut message_length).unwrap()
+        );
 
         let mut length: Vec<u8> = Vec::new();
         message_length.iter().for_each(|b| {
@@ -85,31 +101,40 @@ pub async fn queue() -> HttpResponse {
             }
         });
 
+        println!("{:?}", length);
         let len = String::from_utf8(length).unwrap().parse::<u32>().unwrap();
-        if len == 0 {
+        let mut message_buf: Vec<u8> = vec![0; len as usize];
+
+        println!(
+            "Number of recieved bytes: {}",
+            // get queue elements
+            tcp_stream.read(&mut message_buf).unwrap()
+        );
+
+        let queue: Queue = serde_json::from_slice(message_buf.as_slice()).unwrap();
+        if queue.queue.len() == 0 {
             return HttpResponse::Ok().json(json!({
                 "success": "queue_success",
                 "queue": EMPTY_QUEUE
             }));
         }
-        // println!("Len: {}", len);
-        let mut message_buf: Vec<u8> = vec![0; len as usize];
 
-        // paziti na 2 read !!!!!!
-        // tcp_stream.read(&mut message_buf).unwrap();
-        println!(
-            "Number of recieved bytes: {}",
-            tcp_stream.read(&mut message_buf).unwrap()
-        );
+        let hash_map = hm.dumpster_base_struct.read().unwrap();
+        let mut queue_display_names: Vec<String> = Vec::new();
+        for value in queue.queue {
+            queue_display_names.push(hash_map.get(&value).unwrap().display_name.clone());
+        }
+
         tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
-        HttpResponse::Ok().json(jsonfy_queue(message_buf))
+        HttpResponse::Ok().json(json!({
+            "success": "queue_success",
+            "queue": queue_display_names }))
     } else {
         return HttpResponse::BadRequest().finish();
     }
 }
 
 pub async fn skip() -> HttpResponse {
-
     if let Some(mut tcp_stream) = create_tcp_stream() {
         let data = json!({
             "command": "skip"
@@ -134,7 +159,6 @@ pub async fn skip() -> HttpResponse {
     }
 }
 pub async fn stop() -> HttpResponse {
-
     if let Some(mut tcp_stream) = create_tcp_stream() {
         let data = json!({
             "command": "stop"

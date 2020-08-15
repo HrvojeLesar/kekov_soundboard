@@ -23,7 +23,7 @@ let timeout;
 // SOCKET RESPONSES
 // 0 => Started playing (queue was empty before starting)
 // 1 => Added to queue
-// 2 => 
+// 2 => RETARDERANI SAM
 // 3 => Error joining channel. At least one person needs to be joined in a voice channel!
 // 4 => Skipping
 // 5 => Queue is empty
@@ -58,8 +58,14 @@ client.login(config.token);
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
     // console.log(get_voice_channel(GUILD_ID));
+    // send_queue_test();
 });
 
+// client.on('presenceUpdate', (_, newPres) => {
+//     if (newPres.guild.id === config.guild_id && newPres.userID === "132286945031094272") {
+//         console.log("Nekaj se je premenilo");
+//     }
+// });
 
 net.createServer((sock) => {
     console.log("Connected: " + sock.remoteAddress + ":" + sock.remotePort);
@@ -168,51 +174,74 @@ function sound_manager(sock, data) {
     if (queue.length === 1) {
         let voice_channel = get_voice_channel(config.guild_id);
         if (voice_channel === undefined) {
+            // 3 => Error joining channel. At least one person needs to be joined in a voice channel!
             sock.write("3");
             queue.shift();
         } else {
             voice_channel.join().then(connection => play(connection));
+            // 0 => Started playing (queue was empty before starting)
             sock.write("0");
         }
     } else {
-        // Added to queue
+        // 1 => Added to queue
         sock.write("1");
     }
 }
 
-function send_queue_test(sock) {
+function send_queue_test() {
     queue.push("test");
     queue.push("../sounds/");
     queue.push("Hit");
     queue.push("Ler");
-    let len = 0;
+
+    let q = {
+        "success": "queue_success",
+        "queue": []
+    };
     for (let i = 0; i < queue.length; i++) {
-        len += Buffer.from(queue[i]).length;
+        q.queue.push(queue[i]);
     }
-    // console.log(queue.join('?'));
-    sock.write((len + (queue.length - 1)).toString());
-    sock.write(queue.join("?"));
+
+    let json_string = JSON.stringify(q);
+
+    console.log(json_string);
+    // console.log(q.to_string().getBytes("UTF-8"));
 
     queue.shift();
     queue.shift();
     queue.shift();
     queue.shift();
 }
+
+// function send_queue(sock) {
+//     if (queue.length === 0) {
+//         sock.write("0");
+//         return 0;
+//     }
+//     let len = 0;
+//     let q = new Array();
+//     for (let i = 0; i < queue.length; i++) {
+//         len += Buffer.from(queue[i].value).length;
+//         q.push(queue[i].value);
+//     }
+//     sock.write(len + (queue.length - 1).toString());
+//     sock.write(q.join("?"));
+// }
 
 function send_queue(sock) {
-    if (queue.length === 0) {
-        sock.write("0");
-        return 0;
-    }
-    let len = 0;
-    let q = new Array();
+    let q = {
+        "queue": []
+    };
     for (let i = 0; i < queue.length; i++) {
-        len += Buffer.from(queue[i].value).length;
-        q.push(queue[i].value);
+        q.queue.push(queue[i].value);
     }
-    sock.write(len + (queue.length - 1).toString());
-    sock.write(q.join("?"));
+
+    let json_string = JSON.stringify(q);
+    
+    sock.write(Buffer.from(json_string).length.toString());
+    sock.write(json_string);
 }
+
 
 function disconnect_bot(connection) {
     timeout = setTimeout(() => {
