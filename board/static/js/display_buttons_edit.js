@@ -9,11 +9,7 @@ $(function () {
         for (var i in response.paths) {
             result.push(response.paths[i]);
         }
-        result.sort((a, b) => { 
-            if(a.display_name < b.display_name) { return -1; }
-            if(a.display_name > b.display_name) { return 1; }
-            return 0;
-         });
+        result.sort((a, b) => { return a.time_stamp - b.time_stamp });
         for (var i in result) {
             $(".grid-container").append(
                 `

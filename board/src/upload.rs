@@ -1,4 +1,4 @@
-use crate::prelude::*;
+    use crate::prelude::*;
 
 const SAVE_SOUNDS: &str = "../sounds/";
 const MAX_FILE_LENGTH: usize = 10_485_760; // 10MB
@@ -11,9 +11,16 @@ fn update_db(filename: String, hm: web::Data<dumpster_base::RwLockedDumpster>) {
     hash_map.insert(
         filename.clone(),            
         dumpster_base::DumpsterBaseJson {
-                full_file_name: filename,
-                without_extention: file_without_extention.clone(),
-                display_name: file_without_extention,
+            full_file_name: filename,
+            without_extention: file_without_extention.clone(),
+            display_name: file_without_extention,
+            time_stamp: {
+                if let Ok(time_stamp) = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH) {
+                    time_stamp.as_secs()
+                } else {
+                    0
+                }
+            }
     });
     // sejvanje je sporo kaj puz
     dumpster_base::update_dumpster_db(&mut *hash_map).unwrap();

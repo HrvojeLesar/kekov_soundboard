@@ -12,6 +12,7 @@ pub struct DumpsterBaseJson {
     pub full_file_name: String,
     pub without_extention: String,
     pub display_name: String,
+    pub time_stamp: u64,
 }
 
 pub struct RwLockedDumpster {
@@ -46,6 +47,13 @@ fn create_db_entries() -> HashMap<String, DumpsterBaseJson> {
                 full_file_name: full_file_name,
                 without_extention: file_without_extention.clone(),
                 display_name: file_without_extention,
+                time_stamp: {
+                    if let Ok(time_stamp) = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH) {
+                        time_stamp.as_secs()
+                    } else {
+                        0
+                    }
+                }
             }
         );
     }
