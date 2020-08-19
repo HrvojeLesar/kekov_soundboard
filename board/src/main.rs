@@ -101,9 +101,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&private_key)
                     .name("pojecme")
-                    .login_deadline(time::Duration::hours(24))
-                    .max_age(86400)
-                    .secure(true),
+                    .login_deadline(time::Duration::hours(168))
+                    .max_age(604_800)
+                    .secure(false),
             ))
             .wrap(actix_web::middleware::Logger::default())
             .data(web::JsonConfig::default().limit(1024))
@@ -120,6 +120,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/edit").route(web::get().to(controls::edit)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/rename").route(web::post().to(controls::rename)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/remove").route(web::post().to(controls::remove)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/get-buttons").route(web::get().to(controls::serve_buttons)).wrap(logged_guard::LoggedGuard))
             .service(
                 web::resource("/login")
                 .route(web::get().to(login::login_get))

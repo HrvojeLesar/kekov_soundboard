@@ -12,6 +12,11 @@ pub struct ChangeDisplayName {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct RemoveItem {
+    value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Queue {
     queue: Vec<String>,
 }
@@ -209,7 +214,7 @@ pub async fn edit(
 }
 
 pub async fn remove(
-    info: web::Form<ChangeDisplayName>,
+    info: web::Form<RemoveItem>,
     hm: web::Data<dumpster_base::RwLockedDumpster>,
 ) -> HttpResponse {
     let mut hash_map = hm.dumpster_base_struct.write().unwrap();
@@ -227,4 +232,13 @@ pub async fn remove(
         }
         Err(_) => return HttpResponse::BadRequest().finish(),
     }
+}
+
+pub async fn serve_buttons(hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpResponse {
+    let hash_map = hm.dumpster_base_struct.read().unwrap();
+    let values = hash_map.values().collect::<Vec<&dumpster_base::DumpsterBaseJson>>();
+
+    HttpResponse::Ok().json(json!({
+        "paths": &values,
+    }))
 }

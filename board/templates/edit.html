@@ -52,66 +52,6 @@
 
     <!-- grid continer start -->
     <div class="grid-container">
-        {{#each paths}}
-            <button class="grid-item" data-toggle="modal" data-target="#editDisplayNameModal-{{counter @index}}"
-                data-full-file-name="{{full_file_name}}" data-display-name="{{display_name}}">{{display_name}} <span class="fa fa-pencil-square-o"></span>
-                    <a class="item-remove" data-toggle="modal" data-target="#removeModal-{{counter @index}}"
-                    data-full-file-name="{{full_file_name}}" data-display-name="{{display_name}}">
-                        <span class="fa fa-trash-o"></span>
-                    </a>
-            </button>
-
-        <!-- edit -->
-        <div class="modal fade editModal" id="editDisplayNameModal-{{counter @index}}" tabindex="-1" role="dialog" aria-labelledby="editDisplayNameModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title"></h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <form action="./rename" method="POST">
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="display_name" class="col-form-label">Display Name: </label>
-                            <input type="hidden" class="form-control" id="full_path" value="{{full_file_name}}" name="value">
-                            <input type="text" class="form-control" id="display_name" name="new_display_name">
-                        </div>
-                    </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondery" data-dismiss="modal">Close</button>
-                            <input type="submit" class="btn btn-primary" value="Submit">
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- remove -->
-        <div class="modal fade removeModal" id="removeModal-{{counter @index}}" tabindex="-1" role="dialog" aria-labelledby="removeModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Remove {{display_name}} ?</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <form action="./remove" method="POST">
-                        <input type="hidden" class="form-control" id="full_path" value="{{full_file_name}}" name="value">
-                        <input type="hidden" class="form-control" id="display_name" value="{{new_display_name}}" name="new_display_name">
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondery" data-dismiss="modal">Close</button>
-                            <input type="submit" class="btn btn-danger" value="Remove">
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {{/each}}
     </div>
     <!-- grid continer stop -->
 
@@ -124,7 +64,8 @@
         integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
         crossorigin="anonymous"></script>
     <script src="./static/js/edit.js"></script>
-    <script src="./static/js/index.js"></script>
+    <script src="./static/js/display_buttons_edit.js"></script>
+    <script src="./static/js/controls.js"></script>
 
 </body>
 

@@ -14,6 +14,15 @@ pub fn dumpster_index(hm: web::Data<dumpster_base::RwLockedDumpster>) -> serde_j
     })
 }
 
-pub async fn index(hb: web::Data<Handlebars<'_>>, hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpResponse {
-    HttpResponse::Ok().body(hb.render("index", &dumpster_index(hm)).unwrap())
+pub async fn index(hb: web::Data<Handlebars<'_>>) -> HttpResponse {
+    HttpResponse::Ok().body(hb.render("index", &()).unwrap())
+}
+
+pub async fn index_new(hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpResponse {
+    let hash_map = hm.dumpster_base_struct.read().unwrap();
+    let values = hash_map.values().collect::<Vec<&dumpster_base::DumpsterBaseJson>>();
+
+    HttpResponse::Ok().json(json!({
+        "paths": &values,
+    }))
 }
