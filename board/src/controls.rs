@@ -23,18 +23,18 @@ pub struct Queue {
 
 const EMPTY_QUEUE: &str = "Queue is empty!";
 
-fn jsonfy_queue(recieved_message: Vec<u8>) -> serde_json::Value {
-    let mut queue_vec: Vec<&str> = Vec::new();
-    let parsed_bytes = String::from_utf8(recieved_message).unwrap();
-    parsed_bytes.split('?').for_each(|q| {
-        queue_vec.push(q);
-    });
+// fn jsonfy_queue(recieved_message: Vec<u8>) -> serde_json::Value {
+//     let mut queue_vec: Vec<&str> = Vec::new();
+//     let parsed_bytes = String::from_utf8(recieved_message).unwrap();
+//     parsed_bytes.split('?').for_each(|q| {
+//         queue_vec.push(q);
+//     });
 
-    json!({
-        "success": "queue_success",
-        "queue": queue_vec
-    })
-}
+//     json!({
+//         "success": "queue_success",
+//         "queue": queue_vec
+//     })
+// }
 
 pub async fn play_request(
     info: web::Json<PlayRequest>,
