@@ -12,8 +12,7 @@ $(function () {
         result.sort((a, b) => { return a.time_stamp - b.time_stamp });
         for (var i in result) {
             $(".grid-container").append(
-                `
-            <button class="grid-item" data-toggle="modal" data-target="#editDisplayNameModal-${i}"
+            `<button class="grid-item" data-toggle="modal" data-target="#editDisplayNameModal-${i}"
                 data-full-file-name="${result[i].full_file_name}" data-display-name="${result[i].display_name}" value="${result[i].display_name}"> ${result[i].display_name} <span class="fa fa-pencil-square-o"></span>
                     <a class="item-remove" data-toggle="modal" data-target="#removeModal-${i}"
                     data-full-file-name="${result[i].full_file_name}" data-display-name="${result[i].display_name}">
@@ -21,7 +20,6 @@ $(function () {
                     </a>
             </button>
     
-            <!-- edit -->
             <div class="modal fade editModal" id="editDisplayNameModal-${i}" tabindex="-1" role="dialog" aria-labelledby="editDisplayNameModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog" role="document">
@@ -49,7 +47,6 @@ $(function () {
                 </div>
             </div>
     
-            <!-- remove -->
             <div class="modal fade removeModal" id="removeModal-${i}" tabindex="-1" role="dialog" aria-labelledby="removeModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog" role="document">
