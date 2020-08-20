@@ -14,7 +14,7 @@ $(function () {
             $(".grid-container").append(
                 `
             <button class="grid-item" data-toggle="modal" data-target="#editDisplayNameModal-${i}"
-                data-full-file-name="${result[i].full_file_name}" data-display-name="${result[i].display_name}"> ${result[i].display_name} <span class="fa fa-pencil-square-o"></span>
+                data-full-file-name="${result[i].full_file_name}" data-display-name="${result[i].display_name}" value="${result[i].display_name}"> ${result[i].display_name} <span class="fa fa-pencil-square-o"></span>
                     <a class="item-remove" data-toggle="modal" data-target="#removeModal-${i}"
                     data-full-file-name="${result[i].full_file_name}" data-display-name="${result[i].display_name}">
                         <span class="fa fa-trash-o"></span>
