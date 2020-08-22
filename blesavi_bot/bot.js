@@ -6,7 +6,6 @@ const { exit } = require('process');
 const { setTimeout } = require('timers');
 const { time } = require('console');
 
-
 const client = new Discord.Client();
 
 const HOST = 'localhost';
@@ -61,6 +60,14 @@ client.on('ready', () => {
     // send_queue_test();
 });
 
+client.on("message", (message) => {
+    if (!message.author.bot) {
+        if (message.content.toLowerCase() === "!stop") {
+            console.log("STOP command");
+            stop(undefined);
+        }
+    }
+})
 // client.on('presenceUpdate', (_, newPres) => {
 //     if (newPres.guild.id === config.guild_id && newPres.userID === "132286945031094272") {
 //         console.log("Nekaj se je premenilo");
@@ -121,6 +128,9 @@ function get_voice_channel(guild_id) {
     let channels = client.guilds.cache.get(guild_id).channels.cache.array();
     for (let i = 0; i < channels.length; i++) {
         if (channels[i].type === 'voice' && channels[i].members.size > 0) {
+            if (channels[i].members.size == 1 && channels[i].members.array()[0].user.bot) {
+                return undefined;
+            }
             return channels[i];
         }
     }
@@ -157,33 +167,36 @@ function stop(sock) {
         return 0;
     }
 
-    console.log("Stopping");
     if (queue.length >= 1) {
         queue.length = 0;
-        dispatcher.end();
-        sock.write("6");
+        if (sock != undefined) {
+            dispatcher.end();
+            sock.write("6");
+        } else {
+            console.log("Stopping");
+            dispatcher.end();
+        }
     } else {
-		dispatcher.end();
+        dispatcher.end();
         sock.write("7");
     }
 }
 
 function sound_manager(sock, data) {
-    queue.push(data);
+    let voice_channel = get_voice_channel(config.guild_id);
+
+    if (voice_channel === undefined) {
+        sock.write("3");
+        return;
+    }
+
     clearTimeout(timeout);
-    if (queue.length === 1) {
-        let voice_channel = get_voice_channel(config.guild_id);
-        if (voice_channel === undefined) {
-            // 3 => Error joining channel. At least one person needs to be joined in a voice channel!
-            sock.write("3");
-            queue.shift();
-        } else {
-            voice_channel.join().then(connection => play(connection));
-            // 0 => Started playing (queue was empty before starting)
-            sock.write("0");
-        }
+    if (queue.length === 0) {
+        queue.push(data);
+        voice_channel.join().then(connection => play(connection));
+        sock.write("0");
     } else {
-        // 1 => Added to queue
+        queue.push(data);
         sock.write("1");
     }
 }

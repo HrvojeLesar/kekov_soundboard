@@ -107,7 +107,26 @@ pub async fn queue(hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpRespon
         });
 
         println!("{:?}", length);
-        let len = String::from_utf8(length).unwrap().parse::<u32>().unwrap();
+        // Malo retarderano moglo bi bole
+        let len = match String::from_utf8(length) {
+            Ok(l) => {
+                match l.parse::<u32>() {
+                    Ok(parsed_length) => parsed_length,
+                    Err(e) => {
+                        println!("{}", e);
+                        tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
+                        return HttpResponse::BadRequest().finish();
+                    }
+                }
+            },
+            Err(e) => {
+                println!("{}", e);
+                tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
+                return HttpResponse::BadRequest().finish();
+            }
+        };
+        println!("{}", &len);
+        // let len = String::from_utf8(length).unwrap().parse::<u32>().unwrap();
         let mut message_buf: Vec<u8> = vec![0; len as usize];
 
         println!(
