@@ -4,11 +4,17 @@
 
 .item-remove {
     padding: 6px;
+    margin-top: 3px;
+    margin-right: 3px;
     background-color: #ff0400;
     visibility: hidden;
     position: absolute;
-    top: 0.5px;
-    right: 0.5px;
+    top: 0px;
+    right: 0px;
+    border-radius: 5%;
+    border-style: solid;
+    border-color: black;
+    border-width: 1px;
 }
 
 .item-remove:hover {

@@ -1,0 +1,22 @@
+.navbar-button {
+    background-color: #b5e2fc;
+    padding: 8px 16px;
+    border-radius: 3px;
+    color: black;
+    margin-left: 10px;
+}
+
+.navbar-button:hover {
+    transition-duration: 0.2s;
+    background-color:#dcedf7;
+}
+
+.logout, .navbar-stop {
+    background-color: #ff0400;
+    color: white;
+}
+
+.logout:hover, .navbar-stop:hover {
+    transition-duration: 0.2s;
+    background-color: #d10502;
+}

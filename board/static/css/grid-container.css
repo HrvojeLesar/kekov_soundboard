@@ -5,13 +5,16 @@
     border-radius: 10px;
     border-style: solid;
     border-color: black;
+    border-width: 3px;
     background-color: #eeeeee;
     margin: 10px;
 }
 
 .grid-item {
     background-color:#b5e2fc;
-    border: 1px solid;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
     padding: 20px;
     margin: 5px;
     text-align: center;
