@@ -93,7 +93,7 @@ $(function() {
 
     setInterval(function() {
         let num = random_between(0, 100);
-        if (num >= 0) {
+        if (num >= 90) {
             animate();
         }
     }, 20000);
