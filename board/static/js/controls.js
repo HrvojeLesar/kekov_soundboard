@@ -107,7 +107,7 @@ $(function () {
             }
         }
         toast += `</div>`
-        $('.deni_tosta').append(toast);
+        $('.deni-tosta').append(toast);
         // registreraj listenera kaj ubi toasta z DOM-a
         $(toast_class_selector).on('hidden.bs.toast', function () {
             $(this).remove();

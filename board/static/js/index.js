@@ -13,7 +13,7 @@ $(function () {
             "value": $(this).attr('file_name'),
         };
         console.log(JSON.stringify(val));
-        $.post("./sendReq", JSON.stringify(val), function (response) {
+        $.post("./send-req", JSON.stringify(val), function (response) {
             console.log("Preslo je");
             generate_play_toast(response);
         }, 'json')
@@ -77,7 +77,7 @@ $(function () {
             }
         }
         toast += `</div>`;
-        $('.deni_tosta').append(toast);
+        $('.deni-tosta').append(toast);
         // registreraj listenera kaj ubi toasta z DOM-a
         $(toast_class_selector).on('hidden.bs.toast', function () {
             $(this).remove();

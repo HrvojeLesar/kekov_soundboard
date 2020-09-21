@@ -10,6 +10,7 @@ const client = new Discord.Client();
 
 const HOST = 'localhost';
 const PORT = 1337;
+const WEBSOCKET_PORT = 2222;
 //const GUILD_ID = "679094912179765271"; // T2 server
 
 const MAIN_DIR= "../sounds/";
@@ -31,12 +32,6 @@ let timeout;
 // 8 => Matijos je banati
 // 9 => Nembrem ga banati
 
-// flow
-// sharding ?
-// check if playing (connected)
-// if playing add to queue
-// else join first channel and play sound
-
 // config start
 let config;
 
@@ -56,6 +51,7 @@ client.login(config.token);
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
+    update_voice_monitor();
     // console.log(get_voice_channel(GUILD_ID));
     // send_queue_test();
 });
@@ -67,12 +63,13 @@ client.on("message", (message) => {
             stop(undefined);
         }
     }
-})
-// client.on('presenceUpdate', (_, newPres) => {
-//     if (newPres.guild.id === config.guild_id && newPres.userID === "132286945031094272") {
-//         console.log("Nekaj se je premenilo");
-//     }
-// });
+});
+
+
+
+client.on('voiceStateUpdate', () => {
+    update_voice_monitor();
+});
 
 net.createServer((sock) => {
     console.log("Connected: " + sock.remoteAddress + ":" + sock.remotePort);
@@ -201,46 +198,6 @@ function sound_manager(sock, data) {
     }
 }
 
-function send_queue_test() {
-    queue.push("test");
-    queue.push("../sounds/");
-    queue.push("Hit");
-    queue.push("Ler");
-
-    let q = {
-        "success": "queue_success",
-        "queue": []
-    };
-    for (let i = 0; i < queue.length; i++) {
-        q.queue.push(queue[i]);
-    }
-
-    let json_string = JSON.stringify(q);
-
-    console.log(json_string);
-    // console.log(q.to_string().getBytes("UTF-8"));
-
-    queue.shift();
-    queue.shift();
-    queue.shift();
-    queue.shift();
-}
-
-// function send_queue(sock) {
-//     if (queue.length === 0) {
-//         sock.write("0");
-//         return 0;
-//     }
-//     let len = 0;
-//     let q = new Array();
-//     for (let i = 0; i < queue.length; i++) {
-//         len += Buffer.from(queue[i].value).length;
-//         q.push(queue[i].value);
-//     }
-//     sock.write(len + (queue.length - 1).toString());
-//     sock.write(q.join("?"));
-// }
-
 function send_queue(sock) {
     let q = {
         "queue": []
@@ -254,7 +211,6 @@ function send_queue(sock) {
     sock.write(Buffer.from(json_string).length.toString());
     sock.write(json_string);
 }
-
 
 function disconnect_bot(connection) {
     timeout = setTimeout(() => {
@@ -273,4 +229,58 @@ function banajMatijosa(sock) {
             console.log(error);
             sock.write("9");
         });
+}
+
+function update_voice_monitor() {
+    let voice_channel = get_voice_channel(config.guild_id);
+
+    if (voice_channel === undefined) {
+        let data = {
+            "members": null,
+            "avatars": null,
+            "channel": null
+        };
+        send_data_to_voice_monitor(data);
+        return; 
+    }
+    let voice_channel_name = voice_channel.name;
+    let members = voice_channel.members.array();
+
+    let members_names = new Array();
+    let members_avatars = new Array();
+    for (let i = 0; i < members.length; i++) {
+        let nickname = members[i].nickname;
+        let avatar = members[i].user.avatarURL();
+        if (nickname === undefined) {
+            members_names.push(members[i].user.username);
+        } else {
+            members_names.push(nickname);
+        }
+
+        if (avatar === null) {
+            members_avatars.push(members[i].user.defaultAvatarURL);
+        } else {
+            members_avatars.push(avatar);
+        }
+    }
+
+    let data = {
+        "members": members_names,
+        "avatars": members_avatars,
+        "channel": voice_channel_name
+    };
+
+    send_data_to_voice_monitor(data);
+}
+
+function send_data_to_voice_monitor(data) {
+    let send_nicknames = net.createConnection({port: WEBSOCKET_PORT}, () => {
+        console.log("Sent members data:\n", data);
+        send_nicknames.write(JSON.stringify(data));
+        send_nicknames.end();
+    });
+
+    send_nicknames.on('error', (e) => {
+        console.error(e);
+    }); 
 }

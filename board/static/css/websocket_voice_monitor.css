@@ -1,0 +1,60 @@
+.sock-voice-monitor {
+    position: fixed;
+    top: 168px;
+    left: 0px;
+    width: 8px;
+    padding-bottom: 64px;
+    background: #b5e2fc;
+    border-width: 1px;
+    border-style: solid;
+    border-color: black;
+    border-radius: 0px 7px 7px 0px;
+    /* transition: width 0.2s linear 0s; */
+}
+
+.sock-voice-monitor:hover {
+    padding: 20px 20px;
+    /* auto stops transition animation */
+    width: auto;
+}
+
+.sock-voice-monitor:hover .sock-voice-container {
+    display: contents;
+}
+
+.sock-voice-container {
+    display: none;
+}
+
+.sock-voice-channel {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.sock-voice-channel:only-child{
+    margin-bottom: 0px;
+}
+
+.sock-voice-container-item {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.sock-voice-container-item:last-child {
+    display: block;
+    margin-bottom: 0px;
+}
+
+.sock-voice-user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 5px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.sock-voice-username {
+    display: inline-block;
+    margin-bottom: 0px;
+}
