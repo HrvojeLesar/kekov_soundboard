@@ -161,6 +161,7 @@ function skip(sock) {
 function stop(sock) {
     if (dispatcher == null) {
         console.log("Dispatcher not initialized");
+        sock.write("7");
         return 0;
     }
 
