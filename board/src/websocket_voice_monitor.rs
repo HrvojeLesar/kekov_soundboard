@@ -113,9 +113,9 @@ struct ConnectedMembersString {
 impl Default for ConnectedMembers {
     fn default() -> Self {
         ConnectedMembers {
-            members: Some(Vec::new()),
-            avatars: Some(Vec::new()),
-            channel: Some(String::new())
+            members: None,
+            avatars: None,
+            channel: None
         }
     }
 }

@@ -34,8 +34,8 @@ $(function () {
                         <div class="modal-body">
                             <div class="form-group">
                                 <label for="display_name" class="col-form-label">Display Name: </label>
-                                <input type="hidden" class="form-control" id="full_path" value="${result[i].full_file_name}" name="value">
-                                <input type="text" class="form-control" id="display_name" name="new_display_name">
+                                <input type="hidden" class="form-control full_path" value="${result[i].full_file_name}" name="value">
+                                <input type="text" class="form-control display_name" name="new_display_name">
                             </div>
                         </div>
                             <div class="modal-footer">
@@ -58,7 +58,7 @@ $(function () {
                             </button>
                         </div>
                         <form action="./remove" method="POST">
-                            <input type="hidden" class="form-control" id="full_path" value="${result[i].full_file_name}" name="value">
+                            <input type="hidden" class="form-control full_path" value="${result[i].full_file_name}" name="value">
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondery" data-dismiss="modal">Close</button>
                                 <input type="submit" class="btn btn-danger" value="Remove">

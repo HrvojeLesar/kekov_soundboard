@@ -3,7 +3,7 @@ $(function() {
 
     function connect() {
         disconnect();
-        var wsUri = (window.location.protol=='https:'&&'wss://'||'ws://')+window.location.host + '/ws-voice-monitor/';
+        var wsUri = (window.location.protocol=='https:'&&'wss://'||'ws://')+window.location.host + '/ws-voice-monitor/';
         conn = new WebSocket(wsUri);
         console.log('Connecting');
         conn.onopen = function() {
