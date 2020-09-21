@@ -6,8 +6,8 @@ pub use actix_identity::{CookieIdentityPolicy, IdentityService, RequestIdentity}
 pub use actix_multipart::Multipart;
 pub use actix_service::Service;
 pub use futures::{StreamExt, TryStreamExt};
-pub use handlebars::{Handlebars, Helper, RenderContext, RenderError, Output, Context};
-pub use rand::Rng;
+pub use handlebars::{Handlebars, Helper, RenderContext, RenderError, Output};
+pub use rand::{Rng, rngs::ThreadRng};
 pub use serde::{Serialize, Deserialize};
 pub use std::io::{Read, Write};
 pub use std::net::{TcpStream, Shutdown};
@@ -21,3 +21,5 @@ pub use crate::index;
 pub use crate::dumpster_base;
 pub use crate::nekaj_za_znidarica;
 pub use crate::create_tcp_stream;
+pub use crate::websocket_voice_monitor;
+pub use crate::websocket_voice_monitor_server;

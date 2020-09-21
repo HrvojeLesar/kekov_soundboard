@@ -1,4 +1,6 @@
+extern crate actix;
 extern crate actix_web;
+extern crate actix_web_actors;
 extern crate actix_files;
 extern crate actix_identity;
 extern crate actix_multipart;
@@ -14,6 +16,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate handlebars;
 
+use actix::prelude::*;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use actix_files::Files as ActixFiles;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
@@ -36,12 +39,15 @@ pub mod upload;
 pub mod nekaj_za_znidarica;
 pub mod prelude;
 pub mod logged_guard;
+pub mod websocket_voice_monitor;
+pub mod websocket_voice_monitor_server;
 
 const MAIN_DIR: &str = "../sounds";
+const PORT: u16 = 1337;
 
 /// Creates a tcp stream for communication with the discord bot
 pub fn create_tcp_stream() -> Option<TcpStream> {
-    let tcp_stream = match TcpStream::connect("localhost:1337") {
+    let tcp_stream = match TcpStream::connect(format!("localhost:{}", PORT)) {
         Ok(stream) => {
             stream.set_read_timeout(Some(Duration::new(5, 0))).expect("Error setting read timeout!");
             stream.set_write_timeout(Some(Duration::new(5, 0))).expect("Error setting write timeout!");
@@ -75,6 +81,7 @@ fn counter_helper(
     Ok(())
 }
 
+
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     
@@ -88,6 +95,10 @@ async fn main() -> std::io::Result<()> {
             dumpster_base_struct: RwLock::new(dumpster_base::read_db()),
         }
     );
+    
+    let connected_members = web::Data::new(RwLock::new(websocket_voice_monitor::ConnectedMembers::default()));
+    let websocket_voice_monitor_server = web::Data::new(websocket_voice_monitor_server::VoiceMonitorServer::new(connected_members.clone()).start());
+    websocket_voice_monitor::local_communication(connected_members.clone(), websocket_voice_monitor_server.clone());
 
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
@@ -111,9 +122,11 @@ async fn main() -> std::io::Result<()> {
             .app_data(dumpster_db2_ref.clone())
             .app_data(login_user_pass.clone())
             .app_data(login_znidaric.clone())
+            .app_data(connected_members.clone())
+            .app_data(websocket_voice_monitor_server.clone())
             .service(web::resource("").route(web::get().to(index::index)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/").route(web::get().to(index::index)).wrap(logged_guard::LoggedGuard))
-            .service(web::resource("/sendReq").route(web::post().to(controls::play_request)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/send-req").route(web::post().to(controls::play_request)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/queue").route(web::get().to(controls::queue)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/skip").route(web::get().to(controls::skip)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/stop").route(web::get().to(controls::stop)).wrap(logged_guard::LoggedGuard))
@@ -121,6 +134,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/rename").route(web::post().to(controls::rename)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/remove").route(web::post().to(controls::remove)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/get-buttons").route(web::get().to(controls::serve_buttons)).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/ws-voice-monitor/").to(websocket_voice_monitor::start_voice_monitor).wrap(logged_guard::LoggedGuard))
             .service(
                 web::resource("/login")
                 .route(web::get().to(login::login_get))

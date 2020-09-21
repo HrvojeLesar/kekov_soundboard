@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="./static/css/filter.css">
     <link rel="stylesheet" href="./static/css/grid-container.css">
     <link rel="stylesheet" href="./static/css/edit.css">
+    <link rel="stylesheet" href="./static/css/websocket_voice_monitor.css">
 </head>
 
 <body>
@@ -48,13 +49,17 @@
         </div>
     </nav>
 
-    <div class="deni_tosta" style="position: absolute; top: 69px; right: 0; min-width: 300px; z-index: 10;"></div>
+    <div class="deni-tosta" style="position: absolute; top: 69px; right: 0; min-width: 300px; z-index: 10;"></div>
 
     <div class="filter-container">
         <input type="text" class="filter">
     </div>
 
-    <div class="grid-container">
+    <div class="grid-container"></div>
+
+    <div class="sock-voice-monitor">
+        <div class="sock-voice-container">
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -69,6 +74,7 @@
     <script src="./static/js/display_buttons_edit.js"></script>
     <script src="./static/js/controls.js"></script>
     <script src="./static/js/random_gospon_menadzer.js"></script>
+    <script src="./static/js/websocket_voice_monitor.js"></script>
 
 </body>
 </html>
