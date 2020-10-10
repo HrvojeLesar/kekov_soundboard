@@ -36,29 +36,35 @@ pub mod controls;
 pub mod index;
 pub mod login;
 pub mod upload;
-pub mod nekaj_za_znidarica;
 pub mod prelude;
 pub mod logged_guard;
 pub mod websocket_voice_monitor;
 pub mod websocket_voice_monitor_server;
 
 const MAIN_DIR: &str = "../sounds";
-const PORT: u16 = 1337;
+pub const PORT: u16 = 1337;
 
 /// Creates a tcp stream for communication with the discord bot
-pub fn create_tcp_stream() -> Option<TcpStream> {
-    let tcp_stream = match TcpStream::connect(format!("localhost:{}", PORT)) {
-        Ok(stream) => {
-            stream.set_read_timeout(Some(Duration::new(5, 0))).expect("Error setting read timeout!");
-            stream.set_write_timeout(Some(Duration::new(5, 0))).expect("Error setting write timeout!");
-            Some(stream)
-        },
-        Err(e) => {
-            println!("{}", e);
-            None
-        },
-    };
-    tcp_stream
+pub fn create_tcp_stream() -> Result<TcpStream, HttpResponse> {
+    let mut trys: u8 = 0;
+    while {
+        match TcpStream::connect(format!("localhost:{}", crate::PORT)) {
+            Ok(stream) => {
+                stream.set_read_timeout(Some(Duration::new(5, 0))).expect("Error setting read timeout!");
+                stream.set_write_timeout(Some(Duration::new(5, 0))).expect("Error setting write timeout!");
+                return Ok(stream);
+            },
+            Err(e) => {
+                println!("{}", e);
+            }
+        }
+
+        trys += 1;
+
+        trys < 5
+    } {}
+
+    Err(HttpResponse::BadRequest().finish())
 }
 
 /// Displays 404 for any invalid url
@@ -106,7 +112,6 @@ async fn main() -> std::io::Result<()> {
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
 
     let login_user_pass: web::Data<login::GarbageLogin> = web::Data::new(serde_json::from_str(&std::fs::read_to_string("login.json").unwrap()).unwrap());
-    let login_znidaric: web::Data<nekaj_za_znidarica::LoginZnidaric> = web::Data::new(serde_json::from_str(&std::fs::read_to_string("loginZnidaric.json").unwrap()).unwrap());
     HttpServer::new(move || {
         App::new()
             .wrap(IdentityService::new(
@@ -121,7 +126,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(handlebars_ref.clone())
             .app_data(dumpster_db2_ref.clone())
             .app_data(login_user_pass.clone())
-            .app_data(login_znidaric.clone())
             .app_data(connected_members.clone())
             .app_data(websocket_voice_monitor_server.clone())
             .service(web::resource("").route(web::get().to(index::index)).wrap(logged_guard::LoggedGuard))
@@ -146,17 +150,6 @@ async fn main() -> std::io::Result<()> {
                 .route(web::get().to(upload::upload_get))
                 .route(web::post().to(upload::upload_post))
 	        )
-            .service(web::resource("/volimoZnidarica").route(web::get().to(nekaj_za_znidarica::volimo_znidarica)))
-            .service(
-                web::resource("/loginZnidaric")
-                .route(web::get().to(nekaj_za_znidarica::login_znidaric_get))
-                .route(web::post().to(nekaj_za_znidarica::login_znidaric_post))
-            )
-            .service(
-                web::resource("/banajMatijosa")
-                .route(web::get().to(nekaj_za_znidarica::banaj_matijosa_get))
-                .route(web::post().to(nekaj_za_znidarica::banaj_matijosa_post))
-            )
             .default_service(web::route().to(four_o_four))
             .service(ActixFiles::new("/static", "./static/"))
     })

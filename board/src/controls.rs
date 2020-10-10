@@ -49,162 +49,86 @@ pub async fn play_request(
         return HttpResponse::BadRequest().finish();
     }
 
-    if let Some(mut tcp_stream) = create_tcp_stream() {
-        let data = json!({
-            "command": "play",
-            "value": &info.value,
-            "file_name": &hm.dumpster_base_struct.read().unwrap().get(&info.value).unwrap().full_file_name,
-        });
-        tcp_stream.write(&data.to_string().as_bytes()).expect("Err");
-        tcp_stream.flush().unwrap();
-        let mut buffer = [0; 8];
-        println!(
-            "Number of recieved bytes: {}",
-            tcp_stream.read(&mut buffer).unwrap()
-        );
-        // 0 | 48 => Started playing (queue was empty before starting)
-        // 1 | 49 => Added to queue
-        // 2 | 50 => RETARDERANI SAM
-        // 3 | 51 => Error joining channel. At least one person needs to be joined in a voice channel!
-        println!("{}", buffer[0]);
-        let response;
-        match buffer[0] {
-            48 => response = json!({ "success": "playing" }),
-            49 => response = json!({ "success": "added" }),
-            51 => response = json!({ "error": "error joining" }),
-            _ => response = json!({ "error": "unknown error" }),
-        };
-        tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
-        HttpResponse::Ok().json(response)
-    } else {
-        return HttpResponse::BadRequest().finish();
-    }
+    let mut tcp_stream = match create_tcp_stream() {
+        Ok(stream) => {
+            stream
+        },
+        Err(e) => {
+            return e;
+        }
+    };
+
+    let data = json!({
+        "command": "play",
+        "value": &info.value,
+        "file_name": &hm.dumpster_base_struct.read().unwrap().get(&info.value).unwrap().full_file_name,
+    });
+
+    handle_tcp_write(&mut tcp_stream, data);
+    println!("Tcp prejde");
+
+    return handle_tcp_read(&mut tcp_stream, None);
 }
 
 /// Gets queue from bot
 /// Uses 2 tcp reads, byte length of queue, queue
 pub async fn queue(hm: web::Data<dumpster_base::RwLockedDumpster>) -> HttpResponse {
-    if let Some(mut tcp_stream) = create_tcp_stream() {
-        let data = json!({
-            "command": "queue"
-        });
 
-        tcp_stream.write(&data.to_string().as_bytes()).expect("Err");
-        tcp_stream.flush().unwrap();
-        let mut message_length = [0; 8];
-        // get queue byte length
-        println!(
-            "Number of recieved bytes 1: {}",
-            // get queue elements
-            tcp_stream.read(&mut message_length).unwrap()
-        );
-
-        let mut length: Vec<u8> = Vec::new();
-        message_length.iter().for_each(|b| {
-            if *b > 0u8 {
-                length.push(*b);
-            }
-        });
-
-        println!("{:?}", length);
-        // Malo retarderano moglo bi bole
-        let len = match String::from_utf8(length) {
-            Ok(l) => {
-                match l.parse::<u32>() {
-                    Ok(parsed_length) => parsed_length,
-                    Err(e) => {
-                        println!("{}", e);
-                        tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
-                        return HttpResponse::BadRequest().finish();
-                    }
-                }
-            },
-            Err(e) => {
-                println!("{}", e);
-                tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
-                return HttpResponse::BadRequest().finish();
-            }
-        };
-        println!("{}", &len);
-        // let len = String::from_utf8(length).unwrap().parse::<u32>().unwrap();
-        let mut message_buf: Vec<u8> = vec![0; len as usize];
-
-        println!(
-            "Number of recieved bytes: {}",
-            // get queue elements
-            tcp_stream.read(&mut message_buf).unwrap()
-        );
-
-        let queue: Queue = serde_json::from_slice(message_buf.as_slice()).unwrap();
-        if queue.queue.len() == 0 {
-            return HttpResponse::Ok().json(json!({
-                "success": "queue_success",
-                "queue": EMPTY_QUEUE
-            }));
+    let mut tcp_stream = match create_tcp_stream() {
+        Ok(stream) => {
+            stream
+        },
+        Err(e) => {
+            return e;
         }
+    };
 
-        let hash_map = hm.dumpster_base_struct.read().unwrap();
-        let mut queue_display_names: Vec<String> = Vec::new();
-        for value in queue.queue {
-            queue_display_names.push(hash_map.get(&value).unwrap().display_name.clone());
-        }
+    let data = json!({
+        "command": "queue"
+    });
 
-        tcp_stream.shutdown(Shutdown::Both).expect("Shutdown error");
-        HttpResponse::Ok().json(json!({
-            "success": "queue_success",
-            "queue": queue_display_names }))
-    } else {
-        return HttpResponse::BadRequest().finish();
-    }
+    handle_tcp_write(&mut tcp_stream, data);
+
+    return handle_tcp_read(&mut tcp_stream, Some(hm));
 }
 
 pub async fn skip() -> HttpResponse {
-    if let Some(mut tcp_stream) = create_tcp_stream() {
-        let data = json!({
-            "command": "skip"
-        });
-        tcp_stream.write(&data.to_string().as_bytes()).expect("Err");
-        tcp_stream.flush().unwrap();
-        let mut message_bits = [0; 8];
-        tcp_stream.read(&mut message_bits).unwrap();
-        let mut message: Vec<u8> = Vec::new();
-        message_bits.iter().for_each(|b| {
-            if *b > 0u8 {
-                message.push(*b);
-            }
-        });
-        match String::from_utf8(message).unwrap().parse::<u32>().unwrap() {
-            4 => return HttpResponse::Ok().json(json!({ "success": "skip_success" })),
-            5 => return HttpResponse::Ok().json(json!({ "success": "skip_empty" })),
-            _ => return HttpResponse::BadRequest().finish(),
-        };
-    } else {
-        return HttpResponse::BadRequest().finish();
-    }
+
+    let mut tcp_stream = match create_tcp_stream() {
+        Ok(stream) => {
+            stream
+        },
+        Err(e) => {
+            return e;
+        }
+    };
+
+    let data = json!({
+        "command": "skip"
+    });
+
+    handle_tcp_write(&mut tcp_stream, data);
+
+    return handle_tcp_read(&mut tcp_stream, None);
 }
 pub async fn stop() -> HttpResponse {
-    if let Some(mut tcp_stream) = create_tcp_stream() {
-        let data = json!({
-            "command": "stop"
-        });
-        tcp_stream.write(&data.to_string().as_bytes()).expect("Err");
-        tcp_stream.flush().unwrap();
-        let mut message_bits = [0; 8];
-        tcp_stream.read(&mut message_bits).unwrap();
-        let mut message: Vec<u8> = Vec::new();
-        message_bits.iter().for_each(|b| {
-            if *b > 0u8 {
-                message.push(*b);
-            }
-        });
-        match String::from_utf8(message).unwrap().parse::<u32>().unwrap() {
-            6 => return HttpResponse::Ok().json(json!({ "success": "stop_success" })),
-            7 => return HttpResponse::Ok().json(json!({ "success": "stop_empty" })),
-            _ => return HttpResponse::BadRequest().finish(),
-        };
-    } else {
-        return HttpResponse::BadRequest().finish();
-    }
+
+    let mut tcp_stream = match create_tcp_stream() {
+        Ok(stream) => {
+            stream
+        },
+        Err(e) => {
+            return e;
+        }
+    };
+
+    let data = json!({
+        "command": "stop"
+    });
+
+    handle_tcp_write(&mut tcp_stream, data);
+
+    return handle_tcp_read(&mut tcp_stream, None);
 }
 
 pub async fn rename(
@@ -260,4 +184,75 @@ pub async fn serve_buttons(hm: web::Data<dumpster_base::RwLockedDumpster>) -> Ht
     HttpResponse::Ok().json(json!({
         "paths": &values,
     }))
+}
+
+fn handle_tcp_read(stream: &mut TcpStream, hm: Option<web::Data<dumpster_base::RwLockedDumpster>>) -> HttpResponse {
+        let mut response = json!({ "error": "error" });
+        println!("Response prejde");
+
+        let mut buffer = [0; 8192];
+        let bytes_recieved = stream.read(&mut buffer).unwrap();
+
+        let message = String::from_utf8(Vec::from(&mut buffer[0..bytes_recieved])).unwrap();
+
+        match message.chars().next().unwrap() {
+            '0' => {
+                response = json!({ "success": "playing" });
+            },
+            '1' => {
+                response = json!({ "success": "added" });
+            },
+            '2' => {
+                let hash_map = hm.unwrap();
+                let hash_map = hash_map.dumpster_base_struct.read().unwrap();
+                let mut queue_display_names: Vec<String> = Vec::new();
+
+                let q = message.get(1..).unwrap();
+                let queue: Queue = serde_json::from_str(q).unwrap();
+
+                for value in queue.queue {
+                    queue_display_names.push(hash_map.get(&value).unwrap().display_name.clone());
+                }
+
+                response = json!({
+                    "success": "queue_success",
+                    "queue": queue_display_names
+                });
+            },
+            '3' => {
+                response = json!({ "error": "error joining" });
+            },
+            '4' => {
+                response = json!({ "success": "skip_success" });
+            },
+            '5' => {
+                response = json!({
+                    "success": "queue_success",
+                    "queue": EMPTY_QUEUE
+                });
+            },
+            '6' => {
+                response = json!({ "success": "stop_success" });
+            },
+            '7' => {
+                response = json!({ "success": "stop_empty" });
+            },
+            '8' => {
+
+            },
+            '9' => {
+
+            },
+            _ => {
+                json!({ "error": "unknown error" });
+            },
+        }
+
+    return HttpResponse::Ok().json(response);
+}
+
+fn handle_tcp_write(stream: &mut TcpStream, data: serde_json::Value) {
+    // stream.write_all(&data.to_string().as_bytes()).await.unwrap();
+    stream.write(&data.to_string().as_bytes()).expect("Error writing to stream!");
+    stream.flush().unwrap();
 }

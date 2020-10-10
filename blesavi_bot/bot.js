@@ -23,7 +23,7 @@ let timeout;
 // SOCKET RESPONSES
 // 0 => Started playing (queue was empty before starting)
 // 1 => Added to queue
-// 2 => RETARDERANI SAM
+// 2 => Send queue
 // 3 => Error joining channel. At least one person needs to be joined in a voice channel!
 // 4 => Skipping
 // 5 => Queue is empty
@@ -189,7 +189,20 @@ function sound_manager(sock, data) {
     }
 
     clearTimeout(timeout);
-    if (queue.length === 0) {
+    // if (queue.length === 0) {
+    //     queue.push(data);
+    //     voice_channel.join().then(connection => play(connection));
+    //     sock.write("0");
+    // } else {
+    //     queue.push(data);
+    //     sock.write("1");
+    // }
+
+    if (!client.voice.connections.get(config.guild_id)) {
+        queue.push(data);
+        voice_channel.join().then(connection => play(connection));
+        sock.write("0");
+    } else if (queue.length === 0) {
         queue.push(data);
         voice_channel.join().then(connection => play(connection));
         sock.write("0");
@@ -200,17 +213,23 @@ function sound_manager(sock, data) {
 }
 
 function send_queue(sock) {
+
+    if (queue.length == 0) {
+        sock.write("5");
+        return;
+    }
+
     let q = {
         "queue": []
     };
+
     for (let i = 0; i < queue.length; i++) {
         q.queue.push(queue[i].value);
     }
 
     let json_string = JSON.stringify(q);
     
-    sock.write(Buffer.from(json_string).length.toString());
-    sock.write(json_string);
+    sock.write("2" + json_string);
 }
 
 function disconnect_bot(connection) {
@@ -252,16 +271,16 @@ function update_voice_monitor() {
     for (let i = 0; i < members.length; i++) {
         let nickname = members[i].nickname;
         let avatar = members[i].user.avatarURL();
-        if (nickname === undefined) {
-            members_names.push(members[i].user.username);
-        } else {
+        if (nickname) {
             members_names.push(nickname);
+        } else {
+            members_names.push(members[i].user.username);
         }
 
-        if (avatar === null) {
-            members_avatars.push(members[i].user.defaultAvatarURL);
-        } else {
+        if (avatar) {
             members_avatars.push(avatar);
+        } else {
+            members_avatars.push(members[i].user.defaultAvatarURL);
         }
     }
 

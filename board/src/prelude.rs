@@ -19,7 +19,6 @@ pub use crate::login;
 pub use crate::upload;
 pub use crate::index;
 pub use crate::dumpster_base;
-pub use crate::nekaj_za_znidarica;
 pub use crate::create_tcp_stream;
 pub use crate::websocket_voice_monitor;
 pub use crate::websocket_voice_monitor_server;
