@@ -2,7 +2,14 @@ $(function () {
     $(".filter").attr("placeholder", "Click or press 'S' to search");
 
     document.addEventListener("keydown", function(ev) {
-        if (document.activeElement.className === "filter") {
+		
+		let activeElement = document.activeElement.className;
+		
+		if (activeElement.includes('display_name') || activeElement.includes('modal')) {
+			return;
+		}
+		
+        if (activeElement === "filter") {
             if (ev.code === "Escape" || ev.code === "Enter") {
                 $(".filter").blur();
             }
