@@ -123,7 +123,7 @@ async fn main() -> std::io::Result<()> {
                     .name("pojecme")
                     .login_deadline(time::Duration::hours(168))
                     .max_age(604_800)
-                    .secure(false),
+                    .secure(true),
             ))
             .wrap(actix_web::middleware::Logger::default())
             .data(web::JsonConfig::default().limit(1024))
