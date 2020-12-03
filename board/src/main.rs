@@ -72,6 +72,10 @@ async fn four_o_four() -> HttpResponse {
     HttpResponse::NotFound().body("<h1>404</h1>")
 }
 
+pub async fn volimo_znidarica(hb: web::Data<Handlebars<'_>>) -> HttpResponse {	
+    HttpResponse::Ok().body(hb.render("volimoZnidarica", &()).unwrap())	
+}
+
 fn counter_helper(
     h: &Helper,
     _: &Handlebars,
@@ -119,7 +123,7 @@ async fn main() -> std::io::Result<()> {
                     .name("pojecme")
                     .login_deadline(time::Duration::hours(168))
                     .max_age(604_800)
-                    .secure(true),
+                    .secure(false),
             ))
             .wrap(actix_web::middleware::Logger::default())
             .data(web::JsonConfig::default().limit(1024))
@@ -139,6 +143,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/remove").route(web::post().to(controls::remove)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/get-buttons").route(web::get().to(controls::serve_buttons)).wrap(logged_guard::LoggedGuard))
             .service(web::resource("/ws-voice-monitor/").to(websocket_voice_monitor::start_voice_monitor).wrap(logged_guard::LoggedGuard))
+            .service(web::resource("/volimoZnidarica").route(web::get().to(volimo_znidarica)))
             .service(
                 web::resource("/login")
                 .route(web::get().to(login::login_get))

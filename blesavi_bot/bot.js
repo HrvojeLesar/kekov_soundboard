@@ -47,7 +47,6 @@ if (!fs.existsSync("./config.json")) {
     }
 }
 
-client.login(config.token);
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -304,3 +303,5 @@ function send_data_to_voice_monitor(data) {
         console.error(e);
     }); 
 }
+
+client.login(config.token);
